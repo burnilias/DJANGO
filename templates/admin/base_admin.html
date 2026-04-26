@@ -94,7 +94,8 @@
       display: grid; 
       grid-template-columns: 64px repeat(7, 1fr); 
       border-bottom: 1px solid rgba(59,100,246,0.07); 
-      min-height: 90px; 
+      height: 60px; 
+      box-sizing: border-box;
     } 
     .cal-row:last-child { border-bottom: none; } 
     .time-label { 
@@ -104,21 +105,31 @@
       font-family: 'JetBrains Mono', monospace; 
       font-size: 10px; color: #8a95b8; 
       letter-spacing: 0.04em; 
+      height: 60px;
+      box-sizing: border-box;
     } 
     .cal-cell { 
       border-right: 1px solid rgba(59,100,246,0.07); 
       padding: 6px 5px; 
-      min-height: 90px; 
+      height: 60px;
+      box-sizing: border-box;
     } 
     .cal-cell:last-child { border-right: none; } 
     .cal-cell.today-col { background: rgba(65,105,225,0.03); } 
+    .day-col { 
+      position: relative; 
+      height: 600px; 
+      overflow: visible; 
+    }
     .event { 
+      position: absolute; 
+      left: 5px; 
+      right: 5px;
       background: rgba(65,105,225,0.11); 
       border: 1px solid rgba(65,105,225,0.40); 
       border-left: 3px solid #2d4fd6; 
       border-radius: 8px; 
       padding: 7px 8px; 
-      margin-bottom: 4px; 
       cursor: pointer; 
       transition: all 0.18s; 
     } 

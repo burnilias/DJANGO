@@ -697,8 +697,8 @@ def admin_schedule_list(request):
                     'room': schedule.room,
                     'teacher': schedule.teacher,
                     'type_label': schedule.get_schedule_type_display() if hasattr(schedule, 'get_schedule_type_display') else schedule.schedule_type,
-                    'top': max(0, start_minutes),
-                    'height': max(30, duration), # minimum 30px for visibility
+                    'top': start_minutes,
+                    'height': duration,
                     'type_class': type_class,
                 })
         
@@ -907,8 +907,8 @@ def student_schedule(request):
                     'teacher': schedule.teacher,
                     'type_label': schedule.get_schedule_type_display() if hasattr(schedule, 'get_schedule_type_display') else schedule.schedule_type,
                     'day_name': day_names_fr[day_num - 1],
-                    'top': max(0, start_minutes),
-                    'height': max(30, duration),
+                    'top': start_minutes,
+                    'height': duration,
                     'type_class': type_class,
                 })
         
