@@ -1,0 +1,465 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title_nav %}Emploi du temps{% endblock %}
+
+{% block nav_emploi %}nav-active{% endblock %}
+{% block mob_emploi %}text-[#1e9e30]{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+  <div>
+    <h2 class="text-2xl font-bold tracking-tight" style="color: #555555;">Emploi du temps</h2>
+    <p class="text-sm mt-1" style="color: #777777;">Semaine du {{ week_start|default:"13 Avril" }} - {{ week_end|default:"19 Avril 2026" }}</p>
+  </div>
+  <button onclick="openAddModal()" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-lg transition-all hover:shadow-md hover:-translate-y-0.5" style="background: #3b5bdb;">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Nouveau cours
+  </button>
+</div>
+
+<!-- Legend - Glassmorphism Colors -->
+<div class="flex flex-wrap items-center gap-4 mb-6 p-4 bg-white rounded-xl border shadow-sm" style="border-color: #e0e0e0;">
+  <span class="text-xs font-medium uppercase tracking-wider" style="color: #777777;">Légende:</span>
+  <div class="flex items-center gap-2">
+    <div class="w-3 h-3 rounded bg-emerald-500 ring-2 ring-emerald-200 shadow-md"></div>
+    <span class="text-xs" style="color: #555555;">Cours</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <div class="w-3 h-3 rounded bg-amber-500 ring-2 ring-amber-200 shadow-md"></div>
+    <span class="text-xs" style="color: #555555;">Contrôle</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <div class="w-3 h-3 rounded bg-rose-500 ring-2 ring-rose-200 shadow-md"></div>
+    <span class="text-xs" style="color: #555555;">Examen</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <div class="w-3 h-3 rounded bg-red-500 ring-2 ring-red-200 shadow-md"></div>
+    <span class="text-xs" style="color: #555555;">Rattrapage</span>
+  </div>
+</div>
+
+<!-- Calendar UI -->
+<div class="hidden md:block">
+  <div class="cal-grid-wrap">
+    <!-- Calendar Header -->
+    <div class="cal-header">
+      <div class="cal-header-gutter"></div>
+      {% for day in day_names %}
+      <div class="cal-day-head {% if day.today %}day-head-today{% endif %}">
+        <div class="day-name">{{ day.name }}</div>
+        <div class="day-num">{{ day.date }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Calendar Body -->
+    <div class="cal-body" style="height: 600px; position: relative; overflow-y: auto;">
+      {% for hour in time_slots %}
+      <div class="cal-row">
+        <div class="time-label">{{ hour.label }}</div>
+        {% for day in days %}
+        <div class="cal-cell {% if day.today %}today-col{% endif %}" onclick="openAddModal('{{ day.num }}', '{{ hour.label }}')"></div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+
+      <!-- Absolute Positioned Events Layer -->
+      <div class="absolute inset-0 pointer-events-none" style="margin-left: 64px; display: grid; grid-template-columns: repeat(7, 1fr);">
+        {% for day in days %}
+        <div class="relative h-[600px] day-col">
+          {% for schedule in day.schedules %}
+          <div class="event pointer-events-auto {{ schedule.type_class }}" 
+               style="position: absolute; top: {{ schedule.top }}px; height: {{ schedule.height }}px; left: 4px; right: 4px;"
+               onclick="location.href='{% url 'admin_schedule_edit' schedule.id %}'">
+            <div class="event-title">{{ schedule.name }}</div>
+            <div class="event-time">{{ schedule.start_time|time:"H:i" }} - {{ schedule.end_time|time:"H:i" }}</div>
+            <div class="event-meta">
+              {% if schedule.room %}{{ schedule.room }}{% endif %}
+              {% if schedule.teacher %} • {{ schedule.teacher.first_name|first }}{{ schedule.teacher.last_name|first }}{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile View -->
+<div class="md:hidden space-y-4">
+  <div class="flex gap-2 overflow-x-auto pb-2" id="day-selector">
+    {% for d in day_names %}
+    <button onclick="showDay('{{ d.num }}')" class="day-btn flex-shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300 {% if d.today %}bg-indigo-600 text-white shadow-lg shadow-indigo-500/30{% else %}bg-[#161922] text-gray-400 border border-gray-800/60{% endif %}" data-day="{{ d.num }}">
+      <div class="text-xs opacity-70">{{ d.short }}</div>
+      <div class="font-bold">{{ d.date }}</div>
+    </button>
+    {% endfor %}
+  </div>
+  
+  {% for day in days %}
+  <div class="day-cards day-{{ day.num }} {% if not day.today %}hidden{% endif %} space-y-3">
+    {% for schedule in day.schedules %}
+    <div class="group relative overflow-hidden bg-[#161922] rounded-xl p-4 border border-gray-800/60 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
+         onclick="location.href='{% url 'admin_schedule_edit' schedule.id %}'">
+      
+      <div class="relative flex items-start gap-3">
+        <div class="flex-shrink-0 w-1.5 h-12 rounded-full {{ schedule.type_class }}" style="background: currentColor; opacity: 0.8;"></div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="font-bold text-sm text-white truncate">{{ schedule.name }}</h4>
+            <span class="flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold {{ schedule.type_class }}" style="border-width: 1px;">
+              {{ schedule.type_label }}
+            </span>
+          </div>
+          <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
+            <span class="flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              {{ schedule.start_time|time:"H:i" }} - {{ schedule.end_time|time:"H:i" }}
+            </span>
+            {% if schedule.room %}
+            <span class="flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              {{ schedule.room }}
+            </span>
+            {% endif %}
+          </div>
+          {% if schedule.teacher %}
+          <div class="mt-2 flex items-center gap-2">
+            <div class="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center text-[8px] font-bold text-white">
+              {{ schedule.teacher.first_name|first }}{{ schedule.teacher.last_name|first }}
+            </div>
+            <span class="text-xs text-gray-400">{{ schedule.teacher.first_name }} {{ schedule.teacher.last_name }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-12">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800/50 flex items-center justify-center">
+        <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      </div>
+      <p class="text-gray-500 text-sm">Aucun cours ce jour</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Elegant 3D Modal -->
+<div id="add-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
+  <!-- 3D Container with perspective -->
+  <div class="relative w-full max-w-md mx-4 perspective-1000" id="modal-wrapper">
+    <!-- Modal Content with 3D transform -->
+    <div class="relative bg-white/95 border border-white/50 rounded-3xl p-8 shadow-2xl transform scale-95 transition-all duration-300 rotate-x-0" 
+         id="modal-content"
+         style="box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5) inset, 0 0 100px rgba(59, 91, 219, 0.1);">
+      
+      <!-- Decorative gradient orb -->
+      <div class="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-30" style="background: linear-gradient(135deg, #3b5bdb, #1e9e30);"></div>
+      <div class="absolute -bottom-20 -left-20 w-40 h-40 rounded-full blur-3xl opacity-20" style="background: linear-gradient(135deg, #cc1f1f, #3b5bdb);"></div>
+      
+      <!-- Header with X button -->
+      <div class="relative flex items-center justify-between mb-8">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background: linear-gradient(135deg, #3b5bdb, #1e9e30);">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold" style="color: #555555;">Nouveau cours</h3>
+            <p class="text-xs" style="color: #777777;">Ajouter un cours à l'emploi du temps</p>
+          </div>
+        </div>
+        <!-- Stylish X button -->
+        <button onclick="closeAddModal()" class="group w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 hover:rotate-90" style="background: rgba(204, 31, 31, 0.1);">
+          <svg class="w-5 h-5 transition-colors" style="color: #cc1f1f;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <form method="POST" action="{% url 'admin_schedule_add' %}" class="relative">
+        {% csrf_token %}
+        <input type="hidden" id="modal-day" name="day_of_week" value="1">
+        <input type="hidden" id="modal-start" name="start_time" value="08:00">
+        <div class="space-y-5">
+          <div>
+            <label class="block text-xs font-semibold mb-2" style="color: #777777;">Nom du cours *</label>
+            <input type="text" name="name" required placeholder="Ex: Algorithmique avancée"
+                   class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                   style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                   onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                   onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Jour</label>
+              <select name="day_of_week" id="modal-day-select" class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                      style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                      onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                      onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                <option value="1">Lundi</option>
+                <option value="2">Mardi</option>
+                <option value="3">Mercredi</option>
+                <option value="4">Jeudi</option>
+                <option value="5">Vendredi</option>
+                <option value="6">Samedi</option>
+                <option value="7">Dimanche</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Type</label>
+              <select name="schedule_type" class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                      style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                      onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                      onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                <option value="cours">📘 Cours</option>
+                <option value="controle">📙 Contrôle</option>
+                <option value="examen">📗 Examen</option>
+                <option value="rattrapage">📕 Rattrapage</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Heure début</label>
+              <input type="time" name="start_time" id="modal-start-select" value="08:00"
+                     class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                     style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                     onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                     onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Heure fin</label>
+              <input type="time" name="end_time" value="10:00"
+                     class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                     style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                     onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                     onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Salle</label>
+              <input type="text" name="room" placeholder="Ex: Salle 12B"
+                     class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                     style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                     onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                     onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Enseignant</label>
+              <select name="teacher" class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                      style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                      onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                      onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                <option value="">— Choisir —</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher.id }}">{{ teacher.first_name }} {{ teacher.last_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-2" style="color: #777777;">Description</label>
+            <textarea name="description" rows="3" placeholder="Détails du cours..."
+                      class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 resize-none"
+                      style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                      onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                      onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'"></textarea>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-8">
+          <button type="button" onclick="closeAddModal()" class="px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:shadow-md"
+                  style="color: #555555; background: #f5f5f5;"
+                  onmouseover="this.style.background='#e0e0e0'"
+                  onmouseout="this.style.background='#f5f5f5'">Annuler</button>
+          <button type="submit" class="px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  style="background: linear-gradient(135deg, #3b5bdb, #1e9e30); box-shadow: 0 4px 15px rgba(59, 91, 219, 0.3);">Créer le cours</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  .calendar-3d-container {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+  }
+  
+  .course-block {
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .course-block:hover {
+    transform: translateZ(20px) scale(1.02);
+  }
+  
+  .day-column:hover {
+    background: rgba(99, 102, 241, 0.03);
+  }
+  
+  /* 3D Modal Styles */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  
+  #modal-content {
+    transform-style: preserve-3d;
+    transform: scale(0.95) rotateY(-10deg);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  #modal-wrapper {
+    transform-style: preserve-3d;
+  }
+  
+  /* Shimmer animation for course blocks */
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  .course-block:hover .shimmer {
+    animation: shimmer 1s ease-in-out;
+  }
+  
+  /* Current time pulse */
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 15px rgba(244, 63, 94, 1), 0 0 30px rgba(244, 63, 94, 0.5); }
+    50% { box-shadow: 0 0 25px rgba(244, 63, 94, 1), 0 0 50px rgba(244, 63, 94, 0.8); }
+  }
+  
+  .animate-pulse-dot {
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  
+  /* Entrance animations */
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px) translateZ(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) translateZ(0);
+    }
+  }
+  
+  .course-block {
+    animation: slideInUp 0.5s ease-out backwards;
+    animation-delay: calc(var(--index, 0) * 0.1s);
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // 3D Modal functions with elegant animations
+  function openAddModal(day, hour) {
+    // Set values if provided
+    if (day) {
+      document.getElementById('modal-day').value = day;
+      document.getElementById('modal-day-select').value = day;
+    }
+    if (hour) {
+      document.getElementById('modal-start').value = hour;
+      document.getElementById('modal-start-select').value = hour;
+    }
+    
+    const modal = document.getElementById('add-modal');
+    const wrapper = document.getElementById('modal-wrapper');
+    const content = document.getElementById('modal-content');
+    
+    modal.classList.remove('hidden');
+    
+    // Elegant 3D entrance animation
+    setTimeout(() => {
+      modal.classList.remove('opacity-0');
+      content.style.transform = 'scale(1) rotateY(0deg) rotateX(0deg)';
+      content.style.opacity = '1';
+    }, 10);
+  }
+  
+  function closeAddModal() {
+    const modal = document.getElementById('add-modal');
+    const content = document.getElementById('modal-content');
+    
+    // 3D exit animation
+    modal.classList.add('opacity-0');
+    content.style.transform = 'scale(0.95) rotateY(10deg)';
+    content.style.opacity = '0';
+    
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      // Reset transform for next opening
+      content.style.transform = 'scale(0.95) rotateY(-10deg)';
+    }, 300);
+  }
+  
+  // Close modal when clicking outside
+  document.getElementById('add-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeAddModal();
+    }
+  });
+  
+  // Close on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeAddModal();
+    }
+  });
+
+  // Mobile day selector
+  function showDay(day) {
+    document.querySelectorAll('.day-cards').forEach(el => el.classList.add('hidden'));
+    document.querySelector('.day-' + day).classList.remove('hidden');
+    document.querySelectorAll('.day-btn').forEach(btn => {
+      const active = btn.dataset.day === day;
+      if (active) {
+        btn.classList.add('bg-indigo-600', 'text-white', 'shadow-lg', 'shadow-indigo-500/30');
+        btn.classList.remove('bg-[#161922]', 'text-gray-400', 'border', 'border-gray-800/60');
+      } else {
+        btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg', 'shadow-indigo-500/30');
+        btn.classList.add('bg-[#161922]', 'text-gray-400', 'border', 'border-gray-800/60');
+      }
+    });
+  }
+  
+  // Set current day on mobile
+  const today = new Date().getDay();
+  const dayMap = {0:'7',1:'1',2:'2',3:'3',4:'4',5:'5',6:'6'};
+  showDay(dayMap[today]);
+
+  // Live time indicator
+  function updateTimeIndicator() {
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+    const day = now.getDay();
+    
+    // Only show during school hours (8:00 - 20:00)
+    if (hour >= 8 && hour < 20) {
+      const indicator = document.getElementById('time-indicator');
+      const label = document.getElementById('current-time-label');
+      
+      // Calculate position (60px per hour, starting at 8:00)
+      const minutesFrom8 = (hour - 8) * 60 + minute;
+      const position = minutesFrom8;
+      
+      indicator.style.top = position + 'px';
+      indicator.classList.remove('hidden');
+      label.textContent = hour.toString().padStart(2, '0') + ':' + minute.toString().padStart(2, '0');
+    }
+  }
+  
+  updateTimeIndicator();
+  setInterval(updateTimeIndicator, 60000); // Update every minute
+</script>
+{% endblock %}

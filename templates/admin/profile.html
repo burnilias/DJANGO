@@ -1,0 +1,115 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title_nav %}Mon Profil{% endblock %}
+
+{% block nav_profile %}nav-active{% endblock %}
+
+{% block breadcrumb %}
+<nav class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+  <a href="{% url 'admin_dashboard' %}" class="hover:text-blue-600">Dashboard</a>
+  <span class="mx-2">/</span>
+  <span class="text-gray-700 dark:text-gray-300">Mon Profil</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <!-- Profile Info Card -->
+  <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+    <div class="flex items-center gap-4 mb-6">
+      <div class="w-16 h-16 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xl">
+        {{ profile_user.first_name|make_list|first }}{{ profile_user.last_name|make_list|first }}
+      </div>
+      <div>
+        <h2 class="text-xl font-semibold">{{ profile_user.first_name }} {{ profile_user.last_name }}</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">{{ profile_user.email }}</p>
+        <div class="flex gap-2 mt-1">
+          {% if profile_user.role == 'admin' %}
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">Admin</span>
+          {% elif profile_user.role == 'teacher' %}
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Enseignant</span>
+          {% else %}
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Étudiant</span>
+          {% endif %}
+          {% if profile_user.status == 'active' %}
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>Actif
+          </span>
+          {% elif profile_user.status == 'desactive' %}
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>Désactivé
+          </span>
+          {% else %}
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+            <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>En veille
+          </span>
+          {% endif %}
+        </div>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Membre depuis {{ profile_user.created_at|date:"d F Y" }}</p>
+      </div>
+    </div>
+
+    <!-- Edit form -->
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="form_type" value="update_info">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Prénom</label>
+          <input type="text" name="first_name" value="{{ profile_user.first_name }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Nom</label>
+          <input type="text" name="last_name" value="{{ profile_user.last_name }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Téléphone</label>
+          <input type="text" name="phone" value="{{ profile_user.phone }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Bio</label>
+          <input type="text" name="bio" value="{{ profile_user.bio }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+        </div>
+      </div>
+      <div class="flex justify-end mt-4">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Change Password Card -->
+  <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+    <h3 class="text-lg font-semibold mb-4">Changer le mot de passe</h3>
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="form_type" value="change_password">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Mot de passe actuel</label>
+          <input type="password" name="current_password"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Nouveau mot de passe</label>
+          <input type="password" name="new_password"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Confirmer le nouveau mot de passe</label>
+          <input type="password" name="new_password_confirm"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+        </div>
+      </div>
+      <div class="flex justify-end mt-4">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">Mettre à jour</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

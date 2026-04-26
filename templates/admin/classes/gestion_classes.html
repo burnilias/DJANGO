@@ -1,0 +1,354 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title_nav %}Classes & Groupes{% endblock %}
+{% block nav_classes %}bg-blue-50 text-[#3b5bdb]{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- SECTION 1 : Gestion des Classes                     -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #3b5bdb, #1e9e30);">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-800">Gestion des Classes</h2>
+          <p class="text-xs text-gray-500">Créer et gérer les années d'études</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <!-- Create class form -->
+      <form id="create-classe-form" class="flex items-end gap-3 mb-6">
+        {% csrf_token %}
+        <div class="flex-1">
+          <label class="block text-xs font-semibold mb-1 text-gray-500">Nom de la classe</label>
+          <select name="nom" id="classe-nom" required
+                  class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">-- Choisir une année --</option>
+            <option value="1ère Année">1ère Année</option>
+            <option value="2ème Année">2ème Année</option>
+            <option value="3ème Année">3ème Année</option>
+            <option value="4ème Année">4ème Année</option>
+            <option value="5ème Année">5ème Année</option>
+          </select>
+        </div>
+        <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5"
+                style="background: linear-gradient(135deg, #3b5bdb, #1e9e30); box-shadow: 0 4px 15px rgba(59, 91, 219, 0.3);">
+          + Créer
+        </button>
+      </form>
+
+      <!-- Classes list -->
+      <div id="classes-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        {% for c in classes %}
+        <div class="border border-gray-200 rounded-xl p-4 text-center hover:shadow-md transition-all cursor-default">
+          <div class="text-2xl mb-1">🎓</div>
+          <div class="font-semibold text-gray-800 text-sm">{{ c.nom }}</div>
+          <div class="text-xs text-gray-400 mt-1">{{ c.groupes.count }} groupe{{ c.groupes.count|pluralize }}</div>
+        </div>
+        {% empty %}
+        <p class="text-sm text-gray-400 col-span-full text-center py-4">Aucune classe créée.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- SECTION 2 : Gestion des Groupes                     -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #3b5bdb, #f59e0b);">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-800">Gestion des Groupes</h2>
+          <p class="text-xs text-gray-500">Créer des groupes par classe</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <!-- Create groupe form -->
+      <form id="create-groupe-form" class="flex items-end gap-3 mb-6">
+        {% csrf_token %}
+        <div class="flex-1">
+          <label class="block text-xs font-semibold mb-1 text-gray-500">Classe</label>
+          <select name="classe_id" id="groupe-classe" required
+                  class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">-- Choisir une classe --</option>
+            {% for c in classes %}
+            <option value="{{ c.id }}">{{ c.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="flex-1">
+          <label class="block text-xs font-semibold mb-1 text-gray-500">Nom du groupe</label>
+          <input type="text" name="nom" id="groupe-nom" required placeholder="Ex: Groupe A"
+                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+        <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5"
+                style="background: linear-gradient(135deg, #3b5bdb, #1e9e30); box-shadow: 0 4px 15px rgba(59, 91, 219, 0.3);">
+          + Créer
+        </button>
+      </form>
+
+      <!-- Groupes list -->
+      <div id="groupes-list" class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500">
+            <tr>
+              <th class="px-4 py-3 text-left font-medium">Groupe</th>
+              <th class="px-4 py-3 text-left font-medium">Classe</th>
+              <th class="px-4 py-3 text-left font-medium">Étudiants</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100" id="groupes-tbody">
+            {% for g in groupes %}
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 font-medium text-gray-800">{{ g.nom }}</td>
+              <td class="px-4 py-3 text-gray-500">{{ g.classe.nom }}</td>
+              <td class="px-4 py-3 text-gray-500">{{ g.members.count }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="px-4 py-6 text-center text-gray-400">Aucun groupe créé.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- SECTION 3 : Affectation Utilisateurs                -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #1e9e30, #3b5bdb);">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-800">Affectation des Étudiants</h2>
+          <p class="text-xs text-gray-500">Assigner chaque étudiant à un groupe</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-500">
+            <tr>
+              <th class="px-4 py-3 text-left font-medium">#</th>
+              <th class="px-4 py-3 text-left font-medium">Étudiant</th>
+              <th class="px-4 py-3 text-left font-medium">Email</th>
+              <th class="px-4 py-3 text-left font-medium">Groupe actuel</th>
+              <th class="px-4 py-3 text-left font-medium">Affecter</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for u in users %}
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 text-gray-400">{{ u.id }}</td>
+              <td class="px-4 py-3 font-medium text-gray-800">{{ u.first_name }} {{ u.last_name }}</td>
+              <td class="px-4 py-3 text-gray-500">{{ u.email }}</td>
+              <td class="px-4 py-3">
+                {% if u.groupe %}
+                <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{{ u.groupe.nom }} — {{ u.groupe.classe.nom }}</span>
+                {% else %}
+                <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Non affecté</span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <select id="groupe-select-{{ u.id }}" class="border border-gray-300 rounded-lg px-3 py-1.5 text-xs bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="">-- Aucun --</option>
+                    {% for g in groupes %}
+                    <option value="{{ g.id }}" {% if u.groupe_id == g.id %}selected{% endif %}>{{ g.classe.nom }} — {{ g.nom }}</option>
+                    {% endfor %}
+                  </select>
+                  <button onclick="affecterGroupe({{ u.id }})" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:shadow-md"
+                          style="background: linear-gradient(135deg, #3b5bdb, #1e9e30);">
+                    Affecter
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">Aucun étudiant.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- SECTION 4 : Emploi du Temps par Groupe              -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #3b5bdb, #cc1f1f);">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-gray-800">Emploi du Temps par Groupe</h2>
+          <p class="text-xs text-gray-500">Visualiser et gérer les créneaux</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <!-- Groupe selector -->
+      <div class="flex items-end gap-3 mb-6">
+        <div class="flex-1 max-w-xs">
+          <label class="block text-xs font-semibold mb-1 text-gray-500">Sélectionner un groupe</label>
+          <select id="emploi-groupe-select" onchange="loadEmploiDuTemps()"
+                  class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">-- Choisir un groupe --</option>
+            {% for g in groupes %}
+            <option value="{{ g.id }}">{{ g.classe.nom }} — {{ g.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Schedule grid -->
+      <div id="emploi-grid" class="hidden overflow-x-auto">
+        <table class="w-full text-sm border-collapse min-w-[800px]">
+          <thead>
+            <tr class="bg-gray-50">
+              <th class="border border-gray-200 px-3 py-2 text-gray-500 font-medium w-24">Heure</th>
+              <th class="border border-gray-200 px-3 py-2 text-gray-500 font-medium">Lundi</th>
+              <th class="border border-gray-200 px-3 py-2 text-gray-500 font-medium">Mardi</th>
+              <th class="border border-gray-200 px-3 py-2 text-gray-500 font-medium">Mercredi</th>
+              <th class="border border-gray-200 px-3 py-2 text-gray-500 font-medium">Jeudi</th>
+              <th class="border border-gray-200 px-3 py-2 text-gray-500 font-medium">Vendredi</th>
+              <th class="border border-gray-200 px-3 py-2 text-gray-500 font-medium">Samedi</th>
+            </tr>
+          </thead>
+          <tbody id="emploi-tbody">
+            <!-- Filled by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div id="emploi-empty" class="text-center py-8 text-gray-400 text-sm">
+        Sélectionnez un groupe pour voir son emploi du temps.
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Create Classe ──
+document.getElementById('create-classe-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const nom = document.getElementById('classe-nom').value;
+  if (!nom) return;
+  fetch('{% url "api_classes_list" %}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify({ nom: nom })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) { showToast('Classe créée.'); setTimeout(() => location.reload(), 600); }
+    else { showToast(data.message || 'Erreur.', 'error'); }
+  })
+  .catch(() => showToast('Erreur réseau.', 'error'));
+});
+
+// ── Create Groupe ──
+document.getElementById('create-groupe-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const classe_id = document.getElementById('groupe-classe').value;
+  const nom = document.getElementById('groupe-nom').value;
+  if (!classe_id || !nom) return;
+  fetch('{% url "api_groupes_list" %}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify({ classe_id: classe_id, nom: nom })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) { showToast('Groupe créé.'); setTimeout(() => location.reload(), 600); }
+    else { showToast(data.message || 'Erreur.', 'error'); }
+  })
+  .catch(() => showToast('Erreur réseau.', 'error'));
+});
+
+// ── Affecter Groupe ──
+function affecterGroupe(userId) {
+  const select = document.getElementById('groupe-select-' + userId);
+  const groupeId = select.value || null;
+  fetch('{% url "api_affecter_groupe" %}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify({ user_id: userId, groupe_id: groupeId })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) { showToast(data.message); setTimeout(() => location.reload(), 600); }
+    else { showToast(data.message || 'Erreur.', 'error'); }
+  })
+  .catch(() => showToast('Erreur réseau.', 'error'));
+}
+
+// ── Emploi du Temps ──
+const timeSlots = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
+const dayMap = { '1':'Lundi','2':'Mardi','3':'Mercredi','4':'Jeudi','5':'Vendredi','6':'Samedi' };
+
+function loadEmploiDuTemps() {
+  const groupeId = document.getElementById('emploi-groupe-select').value;
+  if (!groupeId) {
+    document.getElementById('emploi-grid').classList.add('hidden');
+    document.getElementById('emploi-empty').classList.remove('hidden');
+    return;
+  }
+  // Fetch schedules for this group
+  fetch(`{% url "admin_schedule_list" %}?groupe_id=${groupeId}`, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('emploi-grid').classList.remove('hidden');
+    document.getElementById('emploi-empty').classList.add('hidden');
+    renderEmploiGrid(data.schedules || []);
+  })
+  .catch(() => showToast('Erreur réseau.', 'error'));
+}
+
+function renderEmploiGrid(schedules) {
+  const tbody = document.getElementById('emploi-tbody');
+  tbody.innerHTML = '';
+  timeSlots.forEach(time => {
+    let row = `<tr><td class="border border-gray-200 px-3 py-2 text-gray-500 font-medium text-center">${time}</td>`;
+    for (let d = 1; d <= 6; d++) {
+      const slot = schedules.find(s => s.day_of_week == String(d) && s.start_time.startsWith(time.substring(0,5)));
+      if (slot) {
+        const colors = { cours:'bg-blue-100 text-blue-800 border-blue-300', controle:'bg-yellow-100 text-yellow-800 border-yellow-300', examen:'bg-green-100 text-green-800 border-green-300', rattrapage:'bg-red-100 text-red-800 border-red-300' };
+        const cls = colors[slot.schedule_type] || colors.cours;
+        row += `<td class="border border-gray-200 px-2 py-1"><div class="rounded-lg px-2 py-1.5 border ${cls} text-xs"><div class="font-semibold">${slot.name}</div><div>${slot.room || ''}</div><div class="opacity-60">${slot.start_time}–${slot.end_time}</div></div></td>`;
+      } else {
+        row += `<td class="border border-gray-200 px-2 py-1"></td>`;
+      }
+    }
+    row += '</tr>';
+    tbody.innerHTML += row;
+  });
+}
+</script>
+{% endblock %}

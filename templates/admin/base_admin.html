@@ -1,0 +1,412 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block page_title %}Dashboard{% endblock %} — EMSI Student++</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+    }
+  </script>
+  <style>
+    :root {
+      /* EMSI Color Palette */
+      --emsi-blue: #3b5bdb;
+      --emsi-green: #1e9e30;
+      --emsi-red: #cc1f1f;
+      --emsi-gray: #555555;
+      --emsi-light-gray: #f5f5f5;
+      --emsi-border: #e0e0e0;
+      
+      /* Pastel tints for cards */
+      --emsi-blue-light: rgba(59, 91, 219, 0.12);
+      --emsi-green-light: rgba(30, 158, 48, 0.12);
+      --emsi-red-light: rgba(204, 31, 31, 0.12);
+      --emsi-amber-light: rgba(245, 158, 11, 0.12);
+    }
+    
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background-color: #f0f2f8; 
+      background-image: 
+        linear-gradient(rgba(59,100,246,0.07) 1px, transparent 1px), 
+        linear-gradient(90deg, rgba(59,100,246,0.07) 1px, transparent 1px); 
+      background-size: 32px 32px;
+      background-attachment: fixed;
+    }
+    .nav-active { background: rgba(30, 158, 48, 0.15); color: var(--emsi-green); border-left: 3px solid var(--emsi-green); }
+    .pb-mobile { padding-bottom: 5rem; }
+    @media (min-width: 768px) { .pb-mobile { padding-bottom: 0; } }
+
+    /* Calendar Styles */
+    .cal-grid-wrap { 
+      background: rgba(255,255,255,0.92); 
+      border: 1px solid rgba(65,105,225,0.14); 
+      border-radius: 16px; 
+      overflow: hidden; 
+      box-shadow: 0 4px 24px rgba(45,79,214,0.06); 
+    } 
+    .cal-header { 
+      display: grid; 
+      grid-template-columns: 64px repeat(7, 1fr); 
+      border-bottom: 1px solid rgba(65,105,225,0.14); 
+      background: rgba(240,242,248,0.6); 
+    } 
+    .cal-header-gutter { 
+      border-right: 1px solid rgba(65,105,225,0.14); 
+    } 
+    .cal-day-head { 
+      padding: 12px 8px; 
+      text-align: center; 
+      border-right: 1px solid rgba(65,105,225,0.14); 
+    } 
+    .cal-day-head:last-child { border-right: none; } 
+    .day-name { 
+      font-family: 'JetBrains Mono', monospace; 
+      font-size: 10px; 
+      letter-spacing: 0.10em; 
+      color: #8a95b8; 
+      text-transform: uppercase; 
+      margin-bottom: 4px; 
+    } 
+    .day-num { 
+      font-family: 'Rajdhani', sans-serif; 
+      font-size: 22px; font-weight: 600; 
+      color: #0f1b3d; line-height: 1; 
+    } 
+    .day-head-today .day-num { 
+      background: #2d4fd6; color: #fff; 
+      width: 36px; height: 36px; 
+      border-radius: 50%; 
+      display: flex; align-items: center; justify-content: center; 
+      margin: 0 auto; 
+    } 
+    .cal-body { display: flex; flex-direction: column; } 
+    .cal-row { 
+      display: grid; 
+      grid-template-columns: 64px repeat(7, 1fr); 
+      border-bottom: 1px solid rgba(59,100,246,0.07); 
+      min-height: 90px; 
+    } 
+    .cal-row:last-child { border-bottom: none; } 
+    .time-label { 
+      border-right: 1px solid rgba(65,105,225,0.14); 
+      padding: 8px 10px 0; 
+      text-align: right; 
+      font-family: 'JetBrains Mono', monospace; 
+      font-size: 10px; color: #8a95b8; 
+      letter-spacing: 0.04em; 
+    } 
+    .cal-cell { 
+      border-right: 1px solid rgba(59,100,246,0.07); 
+      padding: 6px 5px; 
+      min-height: 90px; 
+    } 
+    .cal-cell:last-child { border-right: none; } 
+    .cal-cell.today-col { background: rgba(65,105,225,0.03); } 
+    .event { 
+      background: rgba(65,105,225,0.11); 
+      border: 1px solid rgba(65,105,225,0.40); 
+      border-left: 3px solid #2d4fd6; 
+      border-radius: 8px; 
+      padding: 7px 8px; 
+      margin-bottom: 4px; 
+      cursor: pointer; 
+      transition: all 0.18s; 
+    } 
+    .event:hover { 
+      background: rgba(65,105,225,0.18); 
+      border-color: #2d4fd6; 
+      transform: translateY(-1px); 
+      box-shadow: 0 4px 12px rgba(45,79,214,0.15); 
+    } 
+    .event-title { 
+      font-family: 'DM Sans', sans-serif; 
+      font-size: 11.5px; font-weight: 600; 
+      color: #1a2d8a; line-height: 1.3; margin-bottom: 3px; 
+    } 
+    .event-time { 
+      font-family: 'JetBrains Mono', monospace; 
+      font-size: 9.5px; color: #2d4fd6; 
+      letter-spacing: 0.04em; margin-bottom: 2px; 
+    } 
+    .event-meta { 
+      font-size: 10px; color: #8a95b8; 
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+    } 
+    .event.type-lab { border-left-color: #0891b2; background: rgba(8,145,178,0.08); border-color: rgba(8,145,178,0.35); } 
+    .event.type-lab .event-time  { color: #0891b2; } 
+    .event.type-lab .event-title { color: #065986; } 
+    .event.type-lang { border-left-color: #7c3aed; background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.30); } 
+    .event.type-lang .event-time  { color: #7c3aed; } 
+    .event.type-lang .event-title { color: #4c1d95; } 
+    .event.type-research { border-left-color: #059669; background: rgba(5,150,105,0.07); border-color: rgba(5,150,105,0.30); } 
+    .event.type-research .event-time  { color: #059669; } 
+    .event.type-research .event-title { color: #064e3b; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+    /* Sidebar + content transitions */
+    #sidebar { transition: transform 0.2s ease; }
+    #main-area { transition: margin-left 0.2s ease; }
+    
+  </style>
+</head>
+<body class="text-gray-800 min-h-screen" style="color: #555555;">
+  <div class="geo geo-1"></div> 
+  <div class="geo geo-2"></div> 
+  <div class="geo geo-3"></div> 
+  <div class="geo geo-4"></div>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/30 z-30 hidden" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar — White -->
+  <aside id="sidebar"
+    class="fixed left-0 w-60 bg-white border-r border-gray-200 z-40 -translate-x-full shadow-xl"
+    style="top: 3.5rem; height: calc(100% - 3.5rem);">
+
+    <!-- Nav -->
+    <nav class="flex flex-col h-full">
+      <div class="px-3 py-4 space-y-5 overflow-y-auto flex-1">
+
+        <div>
+          <p class="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1.5 px-2">Menu</p>
+          <ul class="space-y-0.5">
+            <li>
+              <a href="{% url 'admin_dashboard' %}"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium
+                        {% block nav_dashboard %}text-gray-600 hover:text-[#3b5bdb] hover:bg-blue-50{% endblock %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 2l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/></svg>
+                Dashboard
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'admin_schedule_list' %}"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium
+                        {% block nav_emploi %}text-gray-600 hover:text-[#3b5bdb] hover:bg-blue-50{% endblock %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Emploi du temps
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'admin_user_list' %}"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium
+                        {% block nav_users %}text-gray-600 hover:text-[#3b5bdb] hover:bg-blue-50{% endblock %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                Étudiants
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'admin_gestion_classes' %}"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium
+                        {% block nav_classes %}text-gray-600 hover:text-[#3b5bdb] hover:bg-blue-50{% endblock %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                Classes & Groupes
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1.5 px-2">Compte</p>
+          <ul class="space-y-0.5">
+            <li>
+              <a href="{% url 'admin_profile' %}"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium
+                        {% block nav_profile %}text-gray-600 hover:text-[#3b5bdb] hover:bg-blue-50{% endblock %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.121 17.804A9 9 0 0112 15a9 9 0 016.879 2.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm-3 14a9 9 0 100-18 9 9 0 000 18z"/></svg>
+                Profil
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'admin_settings' %}"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium
+                        {% block nav_settings %}text-gray-600 hover:text-[#3b5bdb] hover:bg-blue-50{% endblock %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Paramètres
+              </a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Déconnexion pinned to bottom -->
+      <div class="px-3 py-3 border-t border-gray-200">
+        <a href="#" onclick="smoothLogout(event)"
+           class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all text-gray-500 hover:text-red-500 hover:bg-red-50 group">
+          <span class="relative">
+            <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+          </span>
+          <span id="logout-text">Déconnexion</span>
+          <span id="logout-spinner" class="hidden w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></span>
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Top Navbar — EMSI Blue #3b5bdb -->
+  <header class="fixed top-0 left-0 right-0 h-14 z-30 shadow-lg flex items-center justify-between px-4"
+          style="background: #3b5bdb;">
+    <div class="flex items-center gap-3">
+      <!-- Hamburger — always in place -->
+      <button onclick="toggleSidebar()" class="text-white/90 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors" title="Menu">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <!-- Logo — always in place -->
+      <a href="{% url 'admin_dashboard' %}" class="hover:opacity-90 transition-opacity">
+        <img src="{% static 'img/logo.jpg' %}" alt="EMSI" class="h-9 w-auto">
+      </a>
+      <h1 class="text-sm font-semibold text-white hidden sm:block">{% block page_title_nav %}Dashboard{% endblock %}</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-xs text-white/80 hidden sm:block">{{ request.session.first_name }} {{ request.session.last_name }}</span>
+      <div class="w-8 h-8 rounded-full bg-white/25 text-white font-semibold flex items-center justify-center text-xs border border-white/30">
+        {{ request.session.first_name|make_list|first }}{{ request.session.last_name|make_list|first }}
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content — shifts with sidebar -->
+  <main id="main-area" class="pt-14 min-h-screen pb-mobile transition-all duration-200">
+    <div class="p-5 md:p-8 max-w-6xl">
+      {% block breadcrumb %}{% endblock %}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Nav -->
+  <nav class="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t z-50 shadow-lg" style="border-color: #e0e0e0;">
+    <div class="flex items-center justify-around h-14">
+      <a href="{% url 'admin_dashboard' %}" class="flex flex-col items-center gap-0.5 transition-colors py-1 {% block mob_dashboard %}text-gray-500 hover:text-[#3b5bdb]{% endblock %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 2l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/></svg>
+        <span class="text-[9px]">Dashboard</span>
+      </a>
+      <a href="{% url 'admin_schedule_list' %}" class="flex flex-col items-center gap-0.5 transition-colors py-1 {% block mob_emploi %}text-gray-500 hover:text-[#3b5bdb]{% endblock %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span class="text-[9px]">Emploi</span>
+      </a>
+      <a href="{% url 'admin_user_list' %}" class="flex flex-col items-center gap-0.5 transition-colors py-1 {% block mob_users %}text-gray-500 hover:text-[#3b5bdb]{% endblock %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <span class="text-[9px]">Étudiants</span>
+      </a>
+      <a href="{% url 'admin_settings' %}" class="flex flex-col items-center gap-0.5 transition-colors py-1 {% block mob_settings %}text-gray-500 hover:text-[#3b5bdb]{% endblock %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span class="text-[9px]">Paramètres</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="fixed bottom-18 md:bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      const main = document.getElementById('main-area');
+      const isOpen = !sidebar.classList.contains('-translate-x-full');
+
+      if (isOpen) {
+        // Close
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+        if (window.innerWidth >= 768) {
+          main.style.marginLeft = '0';
+        }
+      } else {
+        // Open
+        sidebar.classList.remove('-translate-x-full');
+        if (window.innerWidth >= 768) {
+          main.style.marginLeft = '15rem';
+        } else {
+          overlay.classList.remove('hidden');
+        }
+      }
+    }
+
+    // Handle resize: adjust layout when switching between mobile/desktop
+    window.addEventListener('resize', () => {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      const main = document.getElementById('main-area');
+      const isOpen = !sidebar.classList.contains('-translate-x-full');
+
+      if (isOpen) {
+        if (window.innerWidth >= 768) {
+          overlay.classList.add('hidden');
+          main.style.marginLeft = '15rem';
+        } else {
+          overlay.classList.remove('hidden');
+          main.style.marginLeft = '0';
+        }
+      }
+    });
+
+    function showToast(message, type='success') {
+      const bg = { success: 'bg-emerald-600', error: 'bg-red-600', info: 'bg-indigo-600' };
+      const toast = document.createElement('div');
+      toast.className = `${bg[type] || bg.info} text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-lg pointer-events-auto`;
+      toast.textContent = message;
+      document.getElementById('toast-container').appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+
+    {% for message in messages %}
+      showToast("{{ message }}", "{{ message.tags }}");
+    {% endfor %}
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    // Fast logout - no animations
+    async function smoothLogout(e) {
+      e.preventDefault();
+      
+      try {
+        const response = await fetch("{% url 'api-logout' %}", {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+          window.location.href = "{% url 'admin_dashboard' %}";
+        } else {
+          showToast('Erreur de déconnexion', 'error');
+        }
+      } catch (error) {
+        showToast('Erreur de déconnexion', 'error');
+      }
+    }
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

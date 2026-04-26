@@ -1,0 +1,188 @@
+/* Dashboard Styles */
+.cyber-text {
+    color: #00ff00;
+    text-shadow: 
+        0 0 10px #00ff00,
+        0 0 20px #00ff00;
+    animation: text-flicker 3s infinite;
+}
+
+@keyframes text-flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.9; }
+}
+
+body {
+    background-color: #f0f2f8;
+    background-image: 
+        linear-gradient(rgba(59, 100, 246, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 100, 246, 0.07) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-attachment: fixed;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #00ff00;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00cc00;
+}
+
+/* Button Styles */
+.cyber-btn {
+    background: linear-gradient(45deg, #00ff00, #00aa00);
+    border: 1px solid #00ff00;
+    color: #000;
+    font-weight: bold;
+    padding: 8px 16px;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+}
+
+.cyber-btn:hover {
+    box-shadow: 
+        0 0 10px #00ff00,
+        0 0 20px #00ff00;
+    transform: scale(1.05);
+}
+
+/* Card Animations */
+.bg-black\/60 {
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.bg-black\/60:hover {
+    border-color: #00ff00;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+}
+
+/* Loading Animation */
+.loading-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Terminal Effect */
+.terminal-cursor::after {
+    content: '_';
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* Grid Background */
+.cyber-grid {
+    display: none;
+}
+
+@keyframes grid-move {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(100px, 100px); }
+}
+
+/* Notification Badge */
+.notification-badge {
+    position: relative;
+}
+
+.notification-badge::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background: #ff0000;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Status Indicators */
+.status-online {
+    color: #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+}
+
+.status-offline {
+    color: #ff0000;
+    text-shadow: 0 0 5px #ff0000;
+}
+
+.status-away {
+    color: #ffff00;
+    text-shadow: 0 0 5px #ffff00;
+}
+
+/* Progress Bars */
+.progress-bar {
+    background: #001100;
+    border: 1px solid #00ff00;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00ff00, #00aa00);
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+/* Hover Effects */
+.hover-glow:hover {
+    box-shadow: 
+        0 0 15px rgba(0, 255, 0, 0.4),
+        inset 0 0 15px rgba(0, 255, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Tab Transitions */
+[x-transition] {
+    transition: all 0.3s ease;
+}
+
+/* Data Table Styles */
+.cyber-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cyber-table th,
+.cyber-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+}
+
+.cyber-table th {
+    background: rgba(0, 255, 0, 0.1);
+    font-weight: bold;
+    color: #00ff00;
+}
+
+.cyber-table tr:hover {
+    background: rgba(0, 255, 0, 0.05);
+}

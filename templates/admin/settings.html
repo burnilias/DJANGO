@@ -1,0 +1,23 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title_nav %}Paramètres{% endblock %}
+
+{% block nav_settings %}nav-active{% endblock %}
+{% block mob_settings %}text-[#1e9e30]{% endblock %}
+
+{% block breadcrumb %}
+<nav class="mb-6 text-xs" style="color: #777777;">
+  <a href="{% url 'admin_dashboard' %}" class="hover:text-[#3b5bdb]">Dashboard</a>
+  <span class="mx-2">/</span>
+  <span class="font-medium" style="color: #555555;">Paramètres</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white rounded-xl shadow-sm border p-6" style="border-color: #e0e0e0;">
+    <h2 class="text-xl font-semibold mb-4" style="color: #555555;">Paramètres</h2>
+    <p style="color: #777777;">Les paramètres système seront disponibles prochainement.</p>
+  </div>
+</div>
+{% endblock %}

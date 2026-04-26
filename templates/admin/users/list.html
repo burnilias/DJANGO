@@ -1,0 +1,660 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title_nav %}Utilisateurs{% endblock %}
+
+{% block nav_users %}nav-active{% endblock %}
+{% block mob_users %}text-indigo-400{% endblock %}
+
+{% block breadcrumb %}
+<nav class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+  <a href="{% url 'admin_dashboard' %}" class="hover:text-blue-600">Dashboard</a>
+  <span class="mx-2">/</span>
+  <span class="text-gray-700 dark:text-gray-300">Utilisateurs</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Filters Bar -->
+<form method="get" id="filter-form" class="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
+  <div class="flex flex-wrap items-center gap-3">
+    <!-- Search -->
+    <div class="relative flex-1 min-w-[200px]">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="text" name="search" value="{{ search }}" placeholder="Rechercher..." 
+             class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+    <!-- Role select -->
+    <select name="role" onchange="this.form.submit()"
+            class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+      <option value="">Tous les rôles</option>
+      <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admin</option>
+      <option value="teacher" {% if role_filter == 'teacher' %}selected{% endif %}>Enseignant</option>
+      <option value="student" {% if role_filter == 'student' %}selected{% endif %}>Étudiant</option>
+    </select>
+    <!-- Status select -->
+    <select name="status" onchange="this.form.submit()"
+            class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+      <option value="">Tous les statuts</option>
+      <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Actif</option>
+      <option value="desactive" {% if status_filter == 'desactive' %}selected{% endif %}>Désactivé</option>
+      <option value="veille" {% if status_filter == 'veille' %}selected{% endif %}>En veille</option>
+    </select>
+    <!-- Add button -->
+    <button type="button" onclick="openAddUserModal()" class="text-white rounded-lg px-4 py-2 text-sm font-medium transition-all whitespace-nowrap hover:shadow-lg hover:-translate-y-0.5" style="background: linear-gradient(135deg, #3b5bdb, #1e9e30); box-shadow: 0 4px 15px rgba(59, 91, 219, 0.3);">
+      + Ajouter
+    </button>
+  </div>
+</form>
+
+<!-- Users Table -->
+<div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+        <tr>
+          <th class="px-6 py-3 text-left font-medium">#</th>
+          <th class="px-6 py-3 text-left font-medium">Utilisateur</th>
+          <th class="px-6 py-3 text-left font-medium">Email</th>
+          <th class="px-6 py-3 text-left font-medium">Rôle</th>
+          <th class="px-6 py-3 text-left font-medium">Statut</th>
+          <th class="px-6 py-3 text-left font-medium">Téléphone</th>
+          <th class="px-6 py-3 text-left font-medium">Inscrit le</th>
+          <th class="px-6 py-3 text-left font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+        {% for u in page_obj %}
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 {% if u.id == request.session.user_id %}opacity-60{% endif %}">
+          <td class="px-6 py-4 text-gray-500">{{ u.id }}</td>
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white
+                          {% if u.role == 'admin' %}bg-purple-600{% elif u.role == 'teacher' %}bg-blue-600{% else %}bg-green-600{% endif %}">
+                {{ u.first_name|make_list|first }}{{ u.last_name|make_list|first }}
+              </div>
+              <span class="font-medium">{{ u.first_name }} {{ u.last_name }}</span>
+            </div>
+          </td>
+          <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ u.email }}</td>
+          <td class="px-6 py-4">
+            {% if u.role == 'admin' %}
+            <span class="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">Admin</span>
+            {% elif u.role == 'teacher' %}
+            <span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Enseignant</span>
+            {% else %}
+            <span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Étudiant</span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4">
+            {% if u.id == request.session.user_id %}
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>Actif
+            </span>
+            {% else %}
+            <select onchange="changeStatus({{ u.id }}, this.value)" 
+                    class="text-xs border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="active" {% if u.status == 'active' %}selected{% endif %}>Actif</option>
+              <option value="desactive" {% if u.status == 'desactive' %}selected{% endif %}>Désactivé</option>
+              <option value="veille" {% if u.status == 'veille' %}selected{% endif %}>En veille</option>
+            </select>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ u.phone|default:"—" }}</td>
+          <td class="px-6 py-4 text-gray-500 dark:text-gray-400">{{ u.created_at|date:"d M Y" }}</td>
+          <td class="px-6 py-4">
+            {% if u.id == request.session.user_id %}
+            <span class="text-xs text-gray-400" title="Votre compte">—</span>
+            {% else %}
+            <div class="flex items-center gap-2">
+              <!-- Edit -->
+              <button onclick="openEditModal({{ u.id }})" class="p-1 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" title="Modifier">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </button>
+              <!-- Delete -->
+              <button onclick="openDeleteModal({{ u.id }}, '{{ u.first_name }} {{ u.last_name }}', '{{ u.email }}')" class="p-1 text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors" title="Supprimer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="px-6 py-8 text-center text-gray-400">Aucun utilisateur trouvé</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div class="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-800">
+    <p class="text-sm text-gray-500 dark:text-gray-400">
+      Affichage de {{ page_obj.start_index }} à {{ page_obj.end_index }} sur {{ page_obj.paginator.count }} utilisateurs
+    </p>
+    <div class="flex gap-1">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&search={{ search }}&role={{ role_filter }}&status={{ status_filter }}"
+         class="px-3 py-1 rounded-lg text-sm border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">←</a>
+      {% endif %}
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <span class="px-3 py-1 rounded-lg text-sm bg-blue-600 text-white">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a href="?page={{ num }}&search={{ search }}&role={{ role_filter }}&status={{ status_filter }}"
+           class="px-3 py-1 rounded-lg text-sm border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&search={{ search }}&role={{ role_filter }}&status={{ status_filter }}"
+         class="px-3 py-1 rounded-lg text-sm border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">→</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add User 3D Modal -->
+<div id="add-user-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
+  <div class="relative w-full max-w-md mx-4" style="perspective: 1000px;" id="add-user-wrapper">
+    <div class="relative bg-white/95 border border-white/50 rounded-3xl p-8 shadow-2xl" 
+         id="add-user-content"
+         style="transform: scale(0.95) rotateY(-10deg); opacity: 0; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); transform-style: preserve-3d; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5) inset, 0 0 100px rgba(59, 91, 219, 0.1);">
+      
+      <!-- Decorative gradient orbs -->
+      <div class="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-30" style="background: linear-gradient(135deg, #3b5bdb, #1e9e30);"></div>
+      <div class="absolute -bottom-20 -left-20 w-40 h-40 rounded-full blur-3xl opacity-20" style="background: linear-gradient(135deg, #cc1f1f, #3b5bdb);"></div>
+      
+      <!-- Header with X button -->
+      <div class="relative flex items-center justify-between mb-8">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background: linear-gradient(135deg, #3b5bdb, #1e9e30);">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold" style="color: #555555;">Nouvel utilisateur</h3>
+            <p class="text-xs" style="color: #777777;">Ajouter un utilisateur au système</p>
+          </div>
+        </div>
+        <button onclick="closeAddUserModal()" class="group w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 hover:rotate-90" style="background: rgba(204, 31, 31, 0.1);">
+          <svg class="w-5 h-5 transition-colors" style="color: #cc1f1f;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <form id="add-user-form" method="POST" action="{% url 'admin_add_user' %}" class="relative">
+        {% csrf_token %}
+        <div class="space-y-5">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Prénom *</label>
+              <input type="text" name="first_name" required placeholder="Prénom"
+                     class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                     style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                     onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                     onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Nom *</label>
+              <input type="text" name="last_name" required placeholder="Nom"
+                     class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                     style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                     onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                     onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-2" style="color: #777777;">Email *</label>
+            <input type="email" name="email" required placeholder="email@emsi.ma"
+                   class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                   style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                   onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                   onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-2" style="color: #777777;">Téléphone</label>
+            <input type="text" name="phone" placeholder="+212 6XX XXX XXX"
+                   class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                   style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                   onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                   onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Rôle *</label>
+              <select name="role" class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                      style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                      onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                      onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                <option value="admin">Admin</option>
+                <option value="teacher">Enseignant</option>
+                <option value="student" selected>Étudiant</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Statut *</label>
+              <select name="status" class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                      style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                      onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                      onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                <option value="active" selected>Actif</option>
+                <option value="desactive">Désactivé</option>
+                <option value="veille">En veille</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-2" style="color: #777777;">Groupe</label>
+            <select name="groupe_id" class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                    style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                    onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                    onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+              <option value="">-- Aucun groupe --</option>
+              {% for g in groupes %}
+              <option value="{{ g.id }}">{{ g.classe.nom }} — {{ g.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Mot de passe *</label>
+              <div class="relative">
+                <input type="password" name="password" id="add-password" required placeholder="Mot de passe"
+                       class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                       style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                       onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                       onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                <button type="button" onclick="togglePass('add-password')" class="absolute right-3 top-1/2 -translate-y-1/2" style="color: #999999;">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Confirmer *</label>
+              <div class="relative">
+                <input type="password" name="password_confirm" id="add-password-confirm" required placeholder="Confirmer"
+                       class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                       style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                       onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                       onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                <button type="button" onclick="togglePass('add-password-confirm')" class="absolute right-3 top-1/2 -translate-y-1/2" style="color: #999999;">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-2" style="color: #777777;">Bio</label>
+            <textarea name="bio" rows="2" placeholder="Bio de l'utilisateur..."
+                      class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 resize-none"
+                      style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                      onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                      onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'"></textarea>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-8">
+          <button type="button" onclick="closeAddUserModal()" class="px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:shadow-md"
+                  style="color: #555555; background: #f5f5f5;"
+                  onmouseover="this.style.background='#e0e0e0'"
+                  onmouseout="this.style.background='#f5f5f5'">Annuler</button>
+          <button type="submit" class="px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  style="background: linear-gradient(135deg, #3b5bdb, #1e9e30); box-shadow: 0 4px 15px rgba(59, 91, 219, 0.3);">Créer l'utilisateur</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="edit-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
+  <div class="relative w-full max-w-md mx-4" style="perspective: 1000px;" id="edit-wrapper">
+    <div class="relative bg-white/95 border border-white/50 rounded-3xl p-8 shadow-2xl max-h-[85vh] overflow-y-auto" 
+         id="edit-content"
+         style="transform: scale(0.95) rotateY(-10deg); opacity: 0; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); transform-style: preserve-3d; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5) inset, 0 0 100px rgba(59, 91, 219, 0.1);">
+      
+      <!-- Decorative gradient orbs -->
+      <div class="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-30" style="background: linear-gradient(135deg, #3b5bdb, #1e9e30);"></div>
+      <div class="absolute -bottom-20 -left-20 w-40 h-40 rounded-full blur-3xl opacity-20" style="background: linear-gradient(135deg, #cc1f1f, #3b5bdb);"></div>
+      
+      <!-- Header with X button -->
+      <div class="relative flex items-center justify-between mb-8">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background: linear-gradient(135deg, #3b5bdb, #f59e0b);">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold" style="color: #555555;">Modifier</h3>
+            <p class="text-xs" style="color: #777777;">Modifier les infos de l'utilisateur</p>
+          </div>
+        </div>
+        <button onclick="closeEditModal()" class="group w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 hover:rotate-90" style="background: rgba(204, 31, 31, 0.1);">
+          <svg class="w-5 h-5 transition-colors" style="color: #cc1f1f;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <form id="edit-form" method="POST" class="relative">
+        {% csrf_token %}
+        <input type="hidden" id="edit-user-id" name="id">
+        <div class="space-y-5">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Prénom *</label>
+              <input type="text" id="edit-first-name" name="first_name" required
+                     class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                     style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                     onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                     onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Nom *</label>
+              <input type="text" id="edit-last-name" name="last_name" required
+                     class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                     style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                     onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                     onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-2" style="color: #777777;">Email *</label>
+            <input type="email" id="edit-email" name="email" required
+                   class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                   style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                   onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                   onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-2" style="color: #777777;">Téléphone</label>
+            <input type="text" id="edit-phone" name="phone"
+                   class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                   style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                   onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                   onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Rôle *</label>
+              <select id="edit-role" name="role"
+                      class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                      style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                      onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                      onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                <option value="admin">Admin</option>
+                <option value="teacher">Enseignant</option>
+                <option value="student">Étudiant</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-2" style="color: #777777;">Statut *</label>
+              <select id="edit-status" name="status"
+                      class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                      style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                      onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                      onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+                <option value="active">Actif</option>
+                <option value="desactive">Désactivé</option>
+                <option value="veille">En veille</option>
+              </select>
+            </div>
+          </div>
+          <!-- Optional password change -->
+          <div class="border-t pt-4" style="border-color: #e0e0e0;">
+            <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer" style="color: #777777;">
+              <input type="checkbox" id="edit-change-pass" onchange="document.getElementById('edit-pass-fields').classList.toggle('hidden')">
+              Changer le mot de passe
+            </label>
+            <div id="edit-pass-fields" class="hidden mt-3 space-y-3">
+              <input type="password" id="edit-new-password" name="new_password" placeholder="Nouveau mot de passe"
+                     class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                     style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                     onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                     onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+              <input type="password" id="edit-new-password-confirm" name="new_password_confirm" placeholder="Confirmer le mot de passe"
+                     class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                     style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                     onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                     onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-8">
+          <button type="button" onclick="closeEditModal()" class="px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:shadow-md"
+                  style="color: #555555; background: #f5f5f5;"
+                  onmouseover="this.style.background='#e0e0e0'"
+                  onmouseout="this.style.background='#f5f5f5'">Annuler</button>
+          <button type="submit" class="px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  style="background: linear-gradient(135deg, #3b5bdb, #1e9e30); box-shadow: 0 4px 15px rgba(59, 91, 219, 0.3);">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="delete-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
+  <div class="relative w-full max-w-sm mx-4" style="perspective: 1000px;" id="delete-wrapper">
+    <div class="relative bg-white/95 border border-white/50 rounded-3xl p-8 shadow-2xl"
+         id="delete-content"
+         style="transform: scale(0.95) rotateY(-10deg); opacity: 0; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); transform-style: preserve-3d; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5) inset, 0 0 100px rgba(204, 31, 31, 0.1);">
+      
+      <!-- Decorative gradient orbs -->
+      <div class="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-30" style="background: linear-gradient(135deg, #cc1f1f, #f59e0b);"></div>
+      <div class="absolute -bottom-20 -left-20 w-40 h-40 rounded-full blur-3xl opacity-20" style="background: linear-gradient(135deg, #cc1f1f, #3b5bdb);"></div>
+      
+      <div class="relative text-center">
+        <div class="mx-auto flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style="background: rgba(204, 31, 31, 0.1);">
+          <svg class="w-7 h-7" style="color: #cc1f1f;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <h3 class="text-xl font-bold mb-2" style="color: #555555;">Supprimer ?</h3>
+        <p class="text-sm mb-6" style="color: #777777;">
+          Vous allez supprimer <strong id="delete-user-name" style="color: #555555;"></strong> (<span id="delete-user-email"></span>).
+          Cette action est irréversible.
+        </p>
+        <form id="delete-form" method="POST">
+          {% csrf_token %}
+          <div class="flex justify-center gap-3">
+            <button type="button" onclick="closeDeleteModal()" class="px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:shadow-md"
+                    style="color: #555555; background: #f5f5f5;"
+                    onmouseover="this.style.background='#e0e0e0'"
+                    onmouseout="this.style.background='#f5f5f5'">Annuler</button>
+            <button type="submit" class="px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:shadow-lg hover:-translate-y-0.5"
+                    style="background: linear-gradient(135deg, #cc1f1f, #ef4444); box-shadow: 0 4px 15px rgba(204, 31, 31, 0.3);">Supprimer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── 3D Modal Helpers (GLOBAL so onclick can find them) ──
+function open3DModal(modalId, contentId) {
+  const modal = document.getElementById(modalId);
+  const content = document.getElementById(contentId);
+  modal.classList.remove('hidden');
+  setTimeout(() => {
+    modal.classList.remove('opacity-0');
+    content.style.transform = 'scale(1) rotateY(0deg) rotateX(0deg)';
+    content.style.opacity = '1';
+  }, 10);
+}
+
+function close3DModal(modalId, contentId) {
+  const modal = document.getElementById(modalId);
+  const content = document.getElementById(contentId);
+  modal.classList.add('opacity-0');
+  content.style.transform = 'scale(0.95) rotateY(10deg)';
+  content.style.opacity = '0';
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    content.style.transform = 'scale(0.95) rotateY(-10deg)';
+  }, 300);
+}
+
+// ── Add User Modal ──
+function openAddUserModal() {
+  document.getElementById('add-user-form').reset();
+  open3DModal('add-user-modal', 'add-user-content');
+}
+
+function closeAddUserModal() {
+  close3DModal('add-user-modal', 'add-user-content');
+}
+
+// ── Edit Modal ──
+function openEditModal(userId) {
+  fetch(`/api/auth/dashboard/admin/users/${userId}/edit/`)
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('edit-user-id').value = data.id;
+      document.getElementById('edit-first-name').value = data.first_name;
+      document.getElementById('edit-last-name').value = data.last_name;
+      document.getElementById('edit-email').value = data.email;
+      document.getElementById('edit-phone').value = data.phone;
+      document.getElementById('edit-bio').value = data.bio;
+      document.getElementById('edit-role').value = data.role;
+      document.getElementById('edit-status').value = data.status;
+      if (data.is_self) {
+        document.getElementById('edit-role').disabled = true;
+        document.getElementById('edit-status').disabled = true;
+      } else {
+        document.getElementById('edit-role').disabled = false;
+        document.getElementById('edit-status').disabled = false;
+      }
+      document.getElementById('edit-form').action = `/api/auth/dashboard/admin/users/${userId}/edit/`;
+      open3DModal('edit-modal', 'edit-content');
+    });
+}
+
+function closeEditModal() {
+  close3DModal('edit-modal', 'edit-content');
+  document.getElementById('edit-change-pass').checked = false;
+  document.getElementById('edit-pass-fields').classList.add('hidden');
+  document.getElementById('edit-new-password').value = '';
+  document.getElementById('edit-new-password-confirm').value = '';
+}
+
+// ── Delete Modal ──
+function openDeleteModal(userId, name, email) {
+  document.getElementById('delete-user-name').textContent = name;
+  document.getElementById('delete-user-email').textContent = email;
+  document.getElementById('delete-form').action = `/api/auth/dashboard/admin/users/${userId}/delete/`;
+  open3DModal('delete-modal', 'delete-content');
+}
+
+function closeDeleteModal() {
+  close3DModal('delete-modal', 'delete-content');
+}
+
+// ── Change status ──
+function changeStatus(userId, newStatus) {
+  fetch(`/api/auth/dashboard/admin/users/${userId}/status/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken'),
+    },
+    body: JSON.stringify({ new_status: newStatus })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showToast('Statut mis à jour.');
+    } else {
+      showToast(data.error || 'Erreur.', 'error');
+      location.reload();
+    }
+  })
+  .catch(() => showToast('Erreur réseau.', 'error'));
+}
+
+// ── Toggle password ──
+function togglePass(id) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+// ── Event listeners (wait for DOM) ──
+document.addEventListener('DOMContentLoaded', function() {
+  // Live search debounce
+  const searchInput = document.querySelector('input[name="search"]');
+  let debounceTimer;
+  searchInput.addEventListener('keyup', function() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      document.getElementById('filter-form').submit();
+    }, 300);
+  });
+
+  // Close on outside click for all modals
+  ['add-user-modal', 'edit-modal', 'delete-modal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+      if (e.target === this) {
+        const contentId = id.replace('-modal', '-content').replace('add-user', 'add-user-content').replace('edit', 'edit-content').replace('delete', 'delete-content');
+        close3DModal(id, contentId);
+      }
+    });
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      if (!document.getElementById('add-user-modal').classList.contains('hidden')) close3DModal('add-user-modal', 'add-user-content');
+      if (!document.getElementById('edit-modal').classList.contains('hidden')) closeEditModal();
+      if (!document.getElementById('delete-modal').classList.contains('hidden')) close3DModal('delete-modal', 'delete-content');
+    }
+  });
+
+  // Add user form submit via AJAX
+  document.getElementById('add-user-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    fetch(this.action, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' },
+      body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        closeAddUserModal();
+        showToast(data.message);
+        setTimeout(() => location.reload(), 800);
+      } else {
+        const errors = data.errors || {};
+        const firstError = Object.values(errors)[0];
+        showToast(firstError || 'Erreur de validation.', 'error');
+      }
+    })
+    .catch(() => showToast('Erreur réseau.', 'error'));
+  });
+
+  // Edit form submit via AJAX
+  document.getElementById('edit-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    fetch(this.action, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+      body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        closeEditModal();
+        showToast(data.message);
+        setTimeout(() => location.reload(), 800);
+      } else {
+        const errors = data.errors || {};
+        const firstError = Object.values(errors)[0];
+        showToast(firstError || 'Erreur de validation.', 'error');
+      }
+    })
+    .catch(() => showToast('Erreur réseau.', 'error'));
+  });
+});
+</script>
+{% endblock %}

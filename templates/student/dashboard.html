@@ -1,0 +1,80 @@
+{% extends "student/base_student.html" %}
+
+{% block page_title %}Dashboard Étudiant{% endblock %}
+{% block page_title_nav %}Dashboard{% endblock %}
+
+{% block nav_dashboard %}nav-active{% endblock %}
+{% block mob_dashboard %}text-[#3b5bdb]{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="mb-8">
+  <h2 class="text-2xl font-bold mb-2" style="color: #555555;">Bienvenue, {{ request.session.first_name }} !</h2>
+  <p class="text-sm" style="color: #777777;">Voici votre emploi du temps pour cette semaine.</p>
+</div>
+
+<!-- Quick Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+  <div class="bg-white rounded-xl border p-5 shadow-sm" style="border-color: #e0e0e0;">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: rgba(59, 91, 219, 0.1);">
+        <svg class="w-6 h-6" style="color: #3b5bdb;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      </div>
+      <div>
+        <p class="text-xs font-medium" style="color: #777777;">Cours cette semaine</p>
+        <p class="text-2xl font-bold" style="color: #3b5bdb;">{{ course_count|default:"12" }}</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="bg-white rounded-xl border p-5 shadow-sm" style="border-color: #e0e0e0;">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: rgba(30, 158, 48, 0.1);">
+        <svg class="w-6 h-6" style="color: #1e9e30;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div>
+        <p class="text-xs font-medium" style="color: #777777;">Présence</p>
+        <p class="text-2xl font-bold" style="color: #1e9e30;">{{ attendance|default:"95%" }}</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="bg-white rounded-xl border p-5 shadow-sm" style="border-color: #e0e0e0;">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: rgba(245, 158, 11, 0.1);">
+        <svg class="w-6 h-6" style="color: #f59e0b;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div>
+        <p class="text-xs font-medium" style="color: #777777;">Prochain cours</p>
+        <p class="text-lg font-bold" style="color: #555555;">{{ next_course|default:"14:00" }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Today's Schedule Preview -->
+<div class="bg-white rounded-xl border shadow-sm overflow-hidden" style="border-color: #e0e0e0;">
+  <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: #e0e0e0; background: #fafafa;">
+    <h3 class="font-semibold" style="color: #555555;">Aujourd'hui — {{ today_name|default:"Lundi" }}</h3>
+    <a href="{% url 'student_schedule' %}" class="text-sm font-medium hover:underline" style="color: #3b5bdb;">Voir tout →</a>
+  </div>
+  <div class="divide-y" style="border-color: #f0f0f0;">
+    {% for course in today_courses|default:"" %}
+    <div class="px-6 py-4 flex items-center gap-4">
+      <div class="text-sm font-medium w-20" style="color: #777777;">{{ course.time }}</div>
+      <div class="flex-1">
+        <p class="font-medium" style="color: #555555;">{{ course.name }}</p>
+        <p class="text-xs" style="color: #777777;">{{ course.room }} • {{ course.teacher }}</p>
+      </div>
+      <span class="px-3 py-1 rounded-full text-xs font-medium" style="background: {{ course.bg_color }}; color: {{ course.text_color }};">
+        {{ course.type }}
+      </span>
+    </div>
+    {% empty %}
+    <div class="px-6 py-8 text-center">
+      <p style="color: #777777;">Aucun cours aujourd'hui</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

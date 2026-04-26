@@ -1,0 +1,113 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title_nav %}Ajouter un utilisateur{% endblock %}
+
+{% block nav_users %}nav-active{% endblock %}
+{% block mob_users %}text-indigo-400{% endblock %}
+
+{% block breadcrumb %}
+<nav class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+  <a href="{% url 'admin_dashboard' %}" class="hover:text-blue-600">Dashboard</a>
+  <span class="mx-2">/</span>
+  <a href="{% url 'admin_user_list' %}" class="hover:text-blue-600">Utilisateurs</a>
+  <span class="mx-2">/</span>
+  <span class="text-gray-700 dark:text-gray-300">Ajouter</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+    <h2 class="text-xl font-semibold mb-6">Ajouter un utilisateur</h2>
+    <form method="POST">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Col 1 -->
+        <div>
+          <label class="block text-sm font-medium mb-1">Prénom *</label>
+          <input type="text" name="first_name" value="{{ form_data.first_name|default:'' }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+          {% if errors.first_name %}<p class="text-red-500 text-xs mt-1">{{ errors.first_name }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Nom *</label>
+          <input type="text" name="last_name" value="{{ form_data.last_name|default:'' }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+          {% if errors.last_name %}<p class="text-red-500 text-xs mt-1">{{ errors.last_name }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Email *</label>
+          <input type="email" name="email" value="{{ form_data.email|default:'' }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+          {% if errors.email %}<p class="text-red-500 text-xs mt-1">{{ errors.email }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Téléphone</label>
+          <input type="text" name="phone" value="{{ form_data.phone|default:'' }}"
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Bio</label>
+          <textarea name="bio" rows="3"
+                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">{{ form_data.bio|default:'' }}</textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Rôle *</label>
+          <select name="role"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+            <option value="admin" {% if form_data.role == 'admin' %}selected{% endif %}>Admin</option>
+            <option value="teacher" {% if form_data.role == 'teacher' %}selected{% endif %}>Enseignant</option>
+            <option value="student" {% if form_data.role == 'student' or not form_data.role %}selected{% endif %}>Étudiant</option>
+          </select>
+          {% if errors.role %}<p class="text-red-500 text-xs mt-1">{{ errors.role }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Statut *</label>
+          <select name="status"
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+            <option value="active" {% if form_data.status == 'active' or not form_data.status %}selected{% endif %}>Actif</option>
+            <option value="desactive" {% if form_data.status == 'desactive' %}selected{% endif %}>Désactivé</option>
+            <option value="veille" {% if form_data.status == 'veille' %}selected{% endif %}>En veille</option>
+          </select>
+          {% if errors.status %}<p class="text-red-500 text-xs mt-1">{{ errors.status }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Mot de passe *</label>
+          <div class="relative">
+            <input type="password" name="password" id="id-password"
+                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-10 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+            <button type="button" onclick="togglePass('id-password')" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </button>
+          </div>
+          {% if errors.password %}<p class="text-red-500 text-xs mt-1">{{ errors.password }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Confirmer le mot de passe *</label>
+          <div class="relative">
+            <input type="password" name="password_confirm" id="id-password-confirm"
+                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-10 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+            <button type="button" onclick="togglePass('id-password-confirm')" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </button>
+          </div>
+          {% if errors.password_confirm %}<p class="text-red-500 text-xs mt-1">{{ errors.password_confirm }}</p>{% endif %}
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <a href="{% url 'admin_user_list' %}" class="px-4 py-2 rounded-lg text-sm border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Annuler</a>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-2 text-sm font-medium transition-colors">Créer l'utilisateur</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function togglePass(id) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+  }
+</script>
+{% endblock %}

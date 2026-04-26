@@ -1,0 +1,208 @@
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMSI Student++ - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/login.css">
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body class="min-h-screen flex items-center justify-center relative">
+    <div class="geo geo-1"></div> 
+    <div class="geo geo-2"></div> 
+    <div class="geo geo-3"></div> 
+    <div class="geo geo-4"></div>
+    
+    <!-- Login Container -->
+    <div class="relative z-20">
+        <div class="bg-white/95 backdrop-blur-lg border-2 border-[#3b5bdb] rounded-xl p-8 max-w-md w-full mx-4"
+             style="box-shadow: 0 10px 50px rgba(59, 91, 219, 0.2);">
+            
+            <!-- Logo/Title -->
+            <div class="text-center mb-8">
+                <img src="/static/img/logo.jpg" alt="EMSI Logo" class="mx-auto mb-6 h-20 w-auto">
+                <h1 class="cyber-text text-3xl font-bold mb-2">EMSI STUDENT++</h1>
+                <p class="text-gray-500 text-sm font-medium">PORTAIL D'ACCÈS ÉTUDIANT</p>
+            </div>
+            
+            <!-- Error Message -->
+            <div id="error-message" class="mb-4 hidden">
+                <p class="text-red-500 text-xs font-semibold"></p>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="login-form" class="space-y-6">
+                <!-- Email Input -->
+                <div class="relative">
+                    <input 
+                        type="email" 
+                        id="email"
+                        placeholder="ADRESSE EMAIL"
+                        class="login-input w-full rounded-lg"
+                        required
+                    >
+                    <div class="absolute top-3.5 right-3 text-[#3b5bdb] text-xs opacity-50">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206"/></svg>
+                    </div>
+                </div>
+                
+                <!-- Password Input -->
+                <div class="relative">
+                    <input 
+                        type="password"
+                        id="password"
+                        placeholder="MOT DE PASSE"
+                        class="login-input w-full rounded-lg pr-10"
+                        required
+                    >
+                    <button 
+                        type="button"
+                        id="toggle-password"
+                        class="absolute top-3.5 right-3 text-[#3b5bdb] hover:text-[#2a43b1] transition-colors"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                </div>
+                
+                <!-- Login Button -->
+                <button 
+                    type="submit"
+                    id="login-btn"
+                    class="cyber-btn w-full rounded-lg relative py-3 shadow-lg"
+                >
+                    <span id="btn-text">SE CONNECTER</span>
+                    <span id="btn-loading" class="flex items-center justify-center hidden">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        AUTHENTIFICATION...
+                    </span>
+                </button>
+            </form>
+            
+            <!-- System Status -->
+            <div class="mt-8 text-center border-t border-gray-100 pt-6">
+                <p class="text-[#3b5bdb] text-xs font-semibold mb-3">
+                    COMPTES DE DÉMONSTRATION :
+                </p>
+                <div class="space-y-1 text-gray-500 text-[11px]">
+                    <p><span class="font-medium text-gray-700">Admin:</span> admin@emsi.edu / EmsiAdmin!2026</p>
+                    <p><span class="font-medium text-gray-700">Enseignant:</span> teacher@emsi.edu / EmsiTeach!2026</p>
+                    <p><span class="font-medium text-gray-700">Étudiant:</span> student@emsi.edu / EmsiLearn!2026</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/django-auth.js"></script>
+<script>
+    // Simple vanilla JavaScript login handler
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginForm = document.getElementById('login-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('login-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnLoading = document.getElementById('btn-loading');
+        const errorMessage = document.getElementById('error-message');
+        const togglePassword = document.getElementById('toggle-password');
+
+        // Pre-fill demo admin credentials
+        emailInput.value = 'admin@emsi.edu';
+        passwordInput.value = 'EmsiAdmin!2026';
+
+        // Toggle password visibility
+        togglePassword.addEventListener('click', function() {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                togglePassword.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>';
+            } else {
+                passwordInput.type = 'password';
+                togglePassword.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>';
+            }
+        });
+
+        // Handle login form submission
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                showError('Email and password are required');
+                return;
+            }
+
+            // Show loading state
+            setLoading(true);
+            hideError();
+
+            try {
+                // Direct API call (simplified)
+                const response = await fetch('/api/auth/login/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showError(data.message || 'Login failed. Please try again.');
+                    return;
+                }
+
+                // Store token and user data
+                sessionStorage.setItem('emsi_django_token', data.token);
+                sessionStorage.setItem('emsi_django_user', JSON.stringify(data.user));
+
+                // Redirect to Django template dashboard based on role
+                let dashboardUrl = '/api/auth/dashboard/admin/';
+                if (data.role === 'admin') {
+                    dashboardUrl = '/api/auth/dashboard/admin/';
+                } else if (data.role === 'teacher') {
+                    dashboardUrl = '/api/auth/dashboard/admin/';  // TODO: teacher dashboard
+                } else {
+                    dashboardUrl = '/api/auth/dashboard/admin/';  // TODO: student dashboard
+                }
+
+                window.location.href = dashboardUrl;
+
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('Cannot connect to server. Please try again.');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        function setLoading(loading) {
+            if (loading) {
+                btnText.classList.add('hidden');
+                btnLoading.classList.remove('hidden');
+                loginBtn.disabled = true;
+            } else {
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+                loginBtn.disabled = false;
+            }
+        }
+
+        function showError(message) {
+            errorMessage.querySelector('p').textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMSI Student++ - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/admin-crud.css">
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body class="min-h-screen bg-black text-green-400" x-data="adminDashboard()">
+    <!-- Navigation -->
+    <nav class="bg-black/90 border-b border-green-500/30 backdrop-blur-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold cyber-text">EMSI STUDENT++</h1>
+                    <span class="ml-4 text-xs bg-red-500/20 px-2 py-1 rounded text-red-400">ADMIN</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span x-text="userEmail" class="text-sm"></span>
+                    <button @click="logout()" class="text-red-400 hover:text-red-300 text-sm">
+                        LOGOUT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-black/80 border-r border-green-500/30 min-h-screen">
+            <div class="p-4">
+                <h2 class="text-lg font-semibold mb-4 cyber-text">ADMIN PANEL</h2>
+                <nav class="space-y-2">
+                    <a href="#" @click="activeTab = 'overview'" 
+                       :class="activeTab === 'overview' ? 'bg-green-500/20 border-green-500' : 'border-transparent'"
+                       class="block px-4 py-2 text-sm border border-green-500/30 rounded hover:bg-green-500/10 transition-colors">
+                        Overview
+                    </a>
+                    <a href="#" @click="activeTab = 'users'" 
+                       :class="activeTab === 'users' ? 'bg-green-500/20 border-green-500' : 'border-transparent'"
+                       class="block px-4 py-2 text-sm border border-green-500/30 rounded hover:bg-green-500/10 transition-colors">
+                        User Management
+                    </a>
+                    <a href="#" @click="activeTab = 'courses'" 
+                       :class="activeTab === 'courses' ? 'bg-green-500/20 border-green-500' : 'border-transparent'"
+                       class="block px-4 py-2 text-sm border border-green-500/30 rounded hover:bg-green-500/10 transition-colors">
+                        Course Management
+                    </a>
+                    <a href="#" @click="activeTab = 'system'" 
+                       :class="activeTab === 'system' ? 'bg-green-500/20 border-green-500' : 'border-transparent'"
+                       class="block px-4 py-2 text-sm border border-green-500/30 rounded hover:bg-green-500/10 transition-colors">
+                        System Status
+                    </a>
+                    <a href="#" @click="activeTab = 'logs'" 
+                       :class="activeTab === 'logs' ? 'bg-green-500/20 border-green-500' : 'border-transparent'"
+                       class="block px-4 py-2 text-sm border border-green-500/30 rounded hover:bg-green-500/10 transition-colors">
+                        Activity Logs
+                    </a>
+                    <a href="#" @click="activeTab = 'settings'" 
+                       :class="activeTab === 'settings' ? 'bg-green-500/20 border-green-500' : 'border-transparent'"
+                       class="block px-4 py-2 text-sm border border-green-500/30 rounded hover:bg-green-500/10 transition-colors">
+                        Settings
+                    </a>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="flex-1 p-6">
+            <!-- Overview Tab -->
+            <div x-show="activeTab === 'overview'" x-transition class="space-y-6">
+                <h2 class="text-2xl font-bold cyber-text">Admin Dashboard</h2>
+                <p class="text-green-400">Welcome, <span x-text="userName"></span></p>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                        <h3 class="text-sm text-green-400 mb-2">TOTAL USERS</h3>
+                        <p class="text-3xl font-bold cyber-text">247</p>
+                        <p class="text-xs text-green-600 mt-2">+12 this week</p>
+                    </div>
+                    <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                        <h3 class="text-sm text-green-400 mb-2">ACTIVE COURSES</h3>
+                        <p class="text-3xl font-bold cyber-text">18</p>
+                        <p class="text-xs text-green-600 mt-2">3 new this month</p>
+                    </div>
+                    <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                        <h3 class="text-sm text-green-400 mb-2">SYSTEM STATUS</h3>
+                        <p class="text-3xl font-bold cyber-text text-green-400">ONLINE</p>
+                        <p class="text-xs text-green-600 mt-2">All systems operational</p>
+                    </div>
+                    <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                        <h3 class="text-sm text-green-400 mb-2">API REQUESTS</h3>
+                        <p class="text-3xl font-bold cyber-text">1.2K</p>
+                        <p class="text-xs text-green-600 mt-2">Last 24 hours</p>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4 cyber-text">Quick Actions</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button class="cyber-btn px-4 py-3 rounded text-sm">
+                            + Add New User
+                        </button>
+                        <button class="cyber-btn px-4 py-3 rounded text-sm">
+                            + Create Course
+                        </button>
+                        <button class="cyber-btn px-4 py-3 rounded text-sm">
+                            📊 Generate Report
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4 cyber-text">Recent System Activity</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-green-500/20">
+                            <span class="text-sm">New user registration: student@emsi.edu</span>
+                            <span class="text-xs text-green-600">2 minutes ago</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-green-500/20">
+                            <span class="text-sm">Course created: Advanced Mathematics</span>
+                            <span class="text-xs text-green-600">1 hour ago</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-green-500/20">
+                            <span class="text-sm">System backup completed</span>
+                            <span class="text-xs text-green-600">3 hours ago</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-sm">Database optimization performed</span>
+                            <span class="text-xs text-green-600">6 hours ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Management Tab -->
+            <div x-show="activeTab === 'users'" x-transition class="space-y-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold cyber-text">User Management</h2>
+                    <button @click="showCreateUserModal = true" class="cyber-btn px-4 py-2 rounded text-sm">
+                        + Add New User
+                    </button>
+                </div>
+                
+                <!-- Users Table -->
+                <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                    <div class="overflow-x-auto">
+                        <table class="cyber-table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="user in users" :key="user.id">
+                                    <tr>
+                                        <td x-text="user.email"></td>
+                                        <td x-text="`${user.first_name} ${user.last_name}`"></td>
+                                        <td>
+                                            <span :class="{
+                                                'text-red-400': user.role === 'admin',
+                                                'text-blue-400': user.role === 'teacher',
+                                                'text-green-400': user.role === 'student'
+                                            }" x-text="user.role.toUpperCase()"></span>
+                                        </td>
+                                        <td>
+                                            <span :class="user.is_active ? 'status-online' : 'status-offline'" 
+                                                  x-text="user.is_active ? 'Active' : 'Inactive'"></span>
+                                        </td>
+                                        <td x-text="formatDate(user.created_at)"></td>
+                                        <td>
+                                            <button @click="editUser(user)" class="text-green-400 hover:text-green-300 text-sm mr-2">
+                                                Edit
+                                            </button>
+                                            <button @click="confirmDeleteUser(user)" class="text-red-400 hover:text-red-300 text-sm">
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Create User Modal -->
+                <div x-show="showCreateUserModal" x-transition class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                    <div class="bg-black/90 border-2 border-green-500 rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 class="text-lg font-semibold mb-4 cyber-text">Create New User</h3>
+                        <form @submit.prevent="createUser()">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm mb-1">Email</label>
+                                    <input type="email" x-model="newUser.email" required 
+                                           class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">Password</label>
+                                    <input type="password" x-model="newUser.password" required 
+                                           class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">First Name</label>
+                                    <input type="text" x-model="newUser.first_name" required 
+                                           class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">Last Name</label>
+                                    <input type="text" x-model="newUser.last_name" required 
+                                           class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">Role</label>
+                                    <select x-model="newUser.role" required 
+                                            class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                        <option value="student">Student</option>
+                                        <option value="teacher">Teacher</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">Phone (optional)</label>
+                                    <input type="tel" x-model="newUser.phone" 
+                                           class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">Bio (optional)</label>
+                                    <textarea x-model="newUser.bio" rows="3"
+                                              class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400"></textarea>
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-3 mt-6">
+                                <button type="button" @click="showCreateUserModal = false" 
+                                        class="px-4 py-2 border border-green-500/30 rounded text-green-400 hover:bg-green-500/10">
+                                    Cancel
+                                </button>
+                                <button type="submit" :disabled="loading" 
+                                        class="cyber-btn px-4 py-2 rounded text-sm">
+                                    <span x-show="!loading">Create User</span>
+                                    <span x-show="loading">Creating...</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Edit User Modal -->
+                <div x-show="showEditUserModal" x-transition class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                    <div class="bg-black/90 border-2 border-green-500 rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 class="text-lg font-semibold mb-4 cyber-text">Edit User</h3>
+                        <form @submit.prevent="updateUser()">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm mb-1">Email</label>
+                                    <input type="email" x-model="editingUser.email" required 
+                                           class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">First Name</label>
+                                    <input type="text" x-model="editingUser.first_name" required 
+                                           class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">Last Name</label>
+                                    <input type="text" x-model="editingUser.last_name" required 
+                                           class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">Role</label>
+                                    <select x-model="editingUser.role" required 
+                                            class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                        <option value="student">Student</option>
+                                        <option value="teacher">Teacher</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">Status</label>
+                                    <select x-model="editingUser.is_active" 
+                                            class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                        <option :value="true">Active</option>
+                                        <option :value="false">Inactive</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">Phone (optional)</label>
+                                    <input type="tel" x-model="editingUser.phone" 
+                                           class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400">
+                                </div>
+                                <div>
+                                    <label class="block text-sm mb-1">Bio (optional)</label>
+                                    <textarea x-model="editingUser.bio" rows="3"
+                                              class="w-full px-3 py-2 bg-black/60 border border-green-500/30 rounded text-green-400"></textarea>
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-3 mt-6">
+                                <button type="button" @click="showEditUserModal = false" 
+                                        class="px-4 py-2 border border-green-500/30 rounded text-green-400 hover:bg-green-500/10">
+                                    Cancel
+                                </button>
+                                <button type="submit" :disabled="loading" 
+                                        class="cyber-btn px-4 py-2 rounded text-sm">
+                                    <span x-show="!loading">Update User</span>
+                                    <span x-show="loading">Updating...</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div x-show="showDeleteModal" x-transition class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                    <div class="bg-black/90 border-2 border-red-500 rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 class="text-lg font-semibold mb-4 text-red-400">Delete User</h3>
+                        <p class="mb-4">Are you sure you want to delete <span x-text="deletingUser?.email" class="font-bold"></span>? This action cannot be undone.</p>
+                        <div class="flex justify-end space-x-3">
+                            <button @click="showDeleteModal = false" 
+                                    class="px-4 py-2 border border-green-500/30 rounded text-green-400 hover:bg-green-500/10">
+                                Cancel
+                            </button>
+                            <button @click="deleteUser()" :disabled="loading" 
+                                    class="px-4 py-2 bg-red-500/20 border border-red-500 rounded text-red-400 hover:bg-red-500/30">
+                                <span x-show="!loading">Delete User</span>
+                                <span x-show="loading">Deleting...</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other tabs (Courses, System, Logs, Settings) -->
+            <div x-show="activeTab === 'courses'" x-transition>
+                <h2 class="text-2xl font-bold cyber-text">Course Management</h2>
+                <p class="text-green-400">Course management features coming soon...</p>
+            </div>
+
+            <div x-show="activeTab === 'system'" x-transition>
+                <h2 class="text-2xl font-bold cyber-text">System Status</h2>
+                <p class="text-green-400">System monitoring features coming soon...</p>
+            </div>
+
+            <div x-show="activeTab === 'logs'" x-transition>
+                <h2 class="text-2xl font-bold cyber-text">Activity Logs</h2>
+                <p class="text-green-400">Activity logging features coming soon...</p>
+            </div>
+
+            <div x-show="activeTab === 'settings'" x-transition>
+                <h2 class="text-2xl font-bold cyber-text">Settings</h2>
+                <p class="text-green-400">System settings coming soon...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/django-auth.js"></script>
+    <script src="../js/dashboard-admin.js"></script>
+</body>
+</html>

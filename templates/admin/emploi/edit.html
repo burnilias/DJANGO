@@ -1,0 +1,105 @@
+{% extends "admin/base_admin.html" %}
+
+{% block page_title_nav %}Modifier le cours{% endblock %}
+
+{% block nav_emploi %}nav-active{% endblock %}
+{% block mob_emploi %}text-indigo-400{% endblock %}
+
+{% block breadcrumb %}
+<nav class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+  <a href="{% url 'admin_dashboard' %}" class="hover:text-blue-600">Dashboard</a>
+  <span class="mx-2">/</span>
+  <a href="{% url 'admin_schedule_list' %}" class="hover:text-blue-600">Emploi du temps</a>
+  <span class="mx-2">/</span>
+  <span class="text-gray-700 dark:text-gray-300">Modifier</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+    <h2 class="text-xl font-semibold mb-6">Modifier le cours</h2>
+    <form method="POST">
+      {% csrf_token %}
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Nom du cours *</label>
+          <input type="text" name="name" value="{{ schedule.name }}" required
+                 class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Type *</label>
+            <select name="schedule_type" required
+                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+              <option value="cours" {% if schedule.schedule_type == 'cours' %}selected{% endif %}>Cours (Bleu)</option>
+              <option value="controle" {% if schedule.schedule_type == 'controle' %}selected{% endif %}>Contrôle (Jaune)</option>
+              <option value="examen" {% if schedule.schedule_type == 'examen' %}selected{% endif %}>Examen (Vert)</option>
+              <option value="rattrapage" {% if schedule.schedule_type == 'rattrapage' %}selected{% endif %}>Rattrapage (Rouge)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Jour *</label>
+            <select name="day_of_week" required
+                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+              <option value="1" {% if schedule.day_of_week == '1' %}selected{% endif %}>Lundi</option>
+              <option value="2" {% if schedule.day_of_week == '2' %}selected{% endif %}>Mardi</option>
+              <option value="3" {% if schedule.day_of_week == '3' %}selected{% endif %}>Mercredi</option>
+              <option value="4" {% if schedule.day_of_week == '4' %}selected{% endif %}>Jeudi</option>
+              <option value="5" {% if schedule.day_of_week == '5' %}selected{% endif %}>Vendredi</option>
+              <option value="6" {% if schedule.day_of_week == '6' %}selected{% endif %}>Samedi</option>
+              <option value="7" {% if schedule.day_of_week == '7' %}selected{% endif %}>Dimanche</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Heure de début *</label>
+            <input type="time" name="start_time" value="{{ schedule.start_time|time:'H:i' }}" required
+                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Heure de fin *</label>
+            <input type="time" name="end_time" value="{{ schedule.end_time|time:'H:i' }}" required
+                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Salle</label>
+            <input type="text" name="room" value="{{ schedule.room }}"
+                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Enseignant</label>
+            <select name="teacher"
+                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+              <option value="">— Sélectionner —</option>
+              {% for teacher in teachers %}
+              <option value="{{ teacher.id }}" {% if schedule.teacher_id == teacher.id %}selected{% endif %}>{{ teacher.first_name }} {{ teacher.last_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-1">Description</label>
+          <textarea name="description" rows="3"
+                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">{{ schedule.description }}</textarea>
+        </div>
+      </div>
+      
+      <div class="flex justify-between mt-6">
+        <a href="{% url 'admin_schedule_delete' schedule.id %}" onclick="return confirm('Supprimer ce cours ?')" class="px-4 py-2 rounded-lg text-sm bg-red-500 hover:bg-red-600 text-white transition-colors">Supprimer</a>
+        <div class="flex gap-3">
+          <a href="{% url 'admin_schedule_list' %}" class="px-4 py-2 rounded-lg text-sm border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Annuler</a>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-2 text-sm font-medium transition-colors">Enregistrer</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

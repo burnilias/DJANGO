@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMSI Student++ - Student Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body class="min-h-screen bg-black text-green-400" x-data="studentDashboard()">
+    <!-- Navigation -->
+    <nav class="bg-black/90 border-b border-green-500/30 backdrop-blur-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold cyber-text">EMSI STUDENT++</h1>
+                    <span class="ml-4 text-xs bg-green-500/20 px-2 py-1 rounded">STUDENT</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span x-text="userEmail" class="text-sm"></span>
+                    <button @click="logout()" class="text-red-400 hover:text-red-300 text-sm">
+                        LOGOUT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-black/80 border-r border-green-500/30 min-h-screen">
+            <div class="p-4">
+                <h2 class="text-lg font-semibold mb-4 cyber-text">DASHBOARD</h2>
+                <nav class="space-y-2">
+                    <a href="#" @click="activeTab = 'overview'" 
+                       :class="activeTab === 'overview' ? 'bg-green-500/20 border-green-500' : 'border-transparent'"
+                       class="block px-4 py-2 text-sm border border-green-500/30 rounded hover:bg-green-500/10 transition-colors">
+                        Overview
+                    </a>
+                    <a href="#" @click="activeTab = 'courses'" 
+                       :class="activeTab === 'courses' ? 'bg-green-500/20 border-green-500' : 'border-transparent'"
+                       class="block px-4 py-2 text-sm border border-green-500/30 rounded hover:bg-green-500/10 transition-colors">
+                        My Courses
+                    </a>
+                    <a href="#" @click="activeTab = 'grades'" 
+                       :class="activeTab === 'grades' ? 'bg-green-500/20 border-green-500' : 'border-transparent'"
+                       class="block px-4 py-2 text-sm border border-green-500/30 rounded hover:bg-green-500/10 transition-colors">
+                        Grades
+                    </a>
+                    <a href="#" @click="activeTab = 'schedule'" 
+                       :class="activeTab === 'schedule' ? 'bg-green-500/20 border-green-500' : 'border-transparent'"
+                       class="block px-4 py-2 text-sm border border-green-500/30 rounded hover:bg-green-500/10 transition-colors">
+                        Schedule
+                    </a>
+                    <a href="#" @click="activeTab = 'resources'" 
+                       :class="activeTab === 'resources' ? 'bg-green-500/20 border-green-500' : 'border-transparent'"
+                       class="block px-4 py-2 text-sm border border-green-500/30 rounded hover:bg-green-500/10 transition-colors">
+                        Resources
+                    </a>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="flex-1 p-6">
+            <!-- Overview Tab -->
+            <div x-show="activeTab === 'overview'" x-transition class="space-y-6">
+                <h2 class="text-2xl font-bold cyber-text">Welcome, <span x-text="userName"></span></h2>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                        <h3 class="text-sm text-green-400 mb-2">GPA</h3>
+                        <p class="text-3xl font-bold cyber-text">3.75</p>
+                    </div>
+                    <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                        <h3 class="text-sm text-green-400 mb-2">COURSES</h3>
+                        <p class="text-3xl font-bold cyber-text">6</p>
+                    </div>
+                    <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                        <h3 class="text-sm text-green-400 mb-2">ATTENDANCE</h3>
+                        <p class="text-3xl font-bold cyber-text">92%</p>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4 cyber-text">Recent Activity</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-green-500/20">
+                            <span class="text-sm">Mathematics - Assignment Submitted</span>
+                            <span class="text-xs text-green-600">2 hours ago</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-green-500/20">
+                            <span class="text-sm">Physics - Quiz Completed</span>
+                            <span class="text-xs text-green-600">1 day ago</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-sm">Programming - Project Grade: A</span>
+                            <span class="text-xs text-green-600">2 days ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Courses Tab -->
+            <div x-show="activeTab === 'courses'" x-transition class="space-y-6">
+                <h2 class="text-2xl font-bold cyber-text">My Courses</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold cyber-text">Mathematics</h3>
+                        <p class="text-sm text-green-400 mb-2">Prof. Smith</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs bg-green-500/20 px-2 py-1 rounded">In Progress</span>
+                            <span class="text-sm">Grade: A-</span>
+                        </div>
+                    </div>
+                    <div class="bg-black/60 border border-green-500/30 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold cyber-text">Physics</h3>
+                        <p class="text-sm text-green-400 mb-2">Dr. Johnson</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs bg-green-500/20 px-2 py-1 rounded">In Progress</span>
+                            <span class="text-sm">Grade: B+</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other tabs (Grades, Schedule, Resources) would go here -->
+            <div x-show="activeTab === 'grades'" x-transition>
+                <h2 class="text-2xl font-bold cyber-text">Grades</h2>
+                <p class="text-green-400">Grades content coming soon...</p>
+            </div>
+
+            <div x-show="activeTab === 'schedule'" x-transition>
+                <h2 class="text-2xl font-bold cyber-text">Schedule</h2>
+                <p class="text-green-400">Schedule content coming soon...</p>
+            </div>
+
+            <div x-show="activeTab === 'resources'" x-transition>
+                <h2 class="text-2xl font-bold cyber-text">Resources</h2>
+                <p class="text-green-400">Resources content coming soon...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/django-auth.js"></script>
+    <script src="../js/dashboard-student.js"></script>
+</body>
+</html>

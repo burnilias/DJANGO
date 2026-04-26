@@ -1,0 +1,22 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media
+
+# Virtualenv
+venv/
+env/
+ENV/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Trae/IDE
+.trae/
+.vscode/
