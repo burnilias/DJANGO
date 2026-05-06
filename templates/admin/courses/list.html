@@ -1,0 +1,102 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block content %}
+<div class="p-4 md:p-8 max-w-7xl mx-auto">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Gestion des Cours</h1>
+      <p class="text-slate-500 mt-1">Vue d'ensemble de tous les cours</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-6">
+    <form method="get" class="flex flex-wrap gap-4">
+      <input type="text" name="search" value="{{ search }}" placeholder="Rechercher..." class="px-4 py-2 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none">
+      <select name="status" class="px-4 py-2 border border-slate-300 rounded-lg focus:border-blue-500 outline-none bg-white">
+        <option value="">Tous les statuts</option>
+        <option value="published" {% if status_filter == 'published' %}selected{% endif %}>Publié</option>
+        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Brouillon</option>
+        <option value="archived" {% if status_filter == 'archived' %}selected{% endif %}>Archivé</option>
+      </select>
+      <select name="teacher" class="px-4 py-2 border border-slate-300 rounded-lg focus:border-blue-500 outline-none bg-white">
+        <option value="">Tous les enseignants</option>
+        {% for teacher in teachers %}
+        <option value="{{ teacher.id }}" {% if teacher_filter == teacher.id|stringformat:"i" %}selected{% endif %}>{{ teacher.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">Filtrer</button>
+      <a href="{% url 'admin_courses_list' %}" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium">Réinitialiser</a>
+    </form>
+  </div>
+
+  <!-- Courses Table -->
+  {% if courses %}
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr>
+            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700">Cours</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700">Enseignant</th>
+            <th class="px-6 py-4 text-center text-sm font-semibold text-slate-700">Leçons</th>
+            <th class="px-6 py-4 text-center text-sm font-semibold text-slate-700">Inscrits</th>
+            <th class="px-6 py-4 text-center text-sm font-semibold text-slate-700">Statut</th>
+            <th class="px-6 py-4 text-right text-sm font-semibold text-slate-700">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for course in courses %}
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0">
+                  {% if course.image %}
+                  <img src="{{ course.image.url }}" alt="" class="w-full h-full object-cover rounded-lg">
+                  {% else %}
+                  <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                  {% endif %}
+                </div>
+                <div>
+                  <p class="font-medium text-slate-800">{{ course.title }}</p>
+                  <p class="text-xs text-slate-500">{{ course.created_at|date:"d/m/Y" }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-slate-600">{{ course.teacher.name }}</td>
+            <td class="px-6 py-4 text-center text-sm text-slate-600">{{ course.lesson_count }}</td>
+            <td class="px-6 py-4 text-center text-sm text-slate-600">{{ course.enrolled_count }}</td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-3 py-1 rounded-full text-xs font-medium {% if course.status == 'published' %}bg-green-100 text-green-700{% elif course.status == 'draft' %}bg-yellow-100 text-yellow-700{% else %}bg-slate-100 text-slate-700{% endif %}">
+                {{ course.get_status_display }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <a href="{% url 'admin_course_lessons' course.id %}" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Leçons">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </a>
+                <a href="{% url 'admin_course_enrollments' course.id %}" class="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Inscriptions">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                </a>
+                <a href="{% url 'admin_course_edit' course.id %}" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Modifier">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </a>
+                <a href="{% url 'admin_course_delete' course.id %}" onclick="return confirm('Supprimer ce cours ?')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-white rounded-xl p-12 text-center shadow-sm border border-slate-200">
+    <p class="text-slate-500">Aucun cours trouvé</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

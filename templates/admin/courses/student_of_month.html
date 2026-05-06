@@ -1,0 +1,62 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block content %}
+<div class="p-4 md:p-8 max-w-5xl mx-auto">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Étudiant du Mois</h1>
+      <p class="text-slate-500 mt-1">Récompensez l'excellence académique</p>
+    </div>
+    <a href="{% url 'admin_calculate_som' %}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">Calculer ce mois</a>
+  </div>
+
+  <!-- Current Student of the Month -->
+  <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-8 text-white mb-8">
+    <div class="flex items-center gap-2 mb-4">
+      <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <span class="font-semibold">Étudiant du Mois en cours</span>
+    </div>
+    
+    {% if current_som %}
+    <div class="flex items-center gap-6">
+      <div class="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-3xl font-bold">
+        {{ current_som.student.first_name|slice:":1" }}{{ current_som.student.last_name|slice:":1" }}
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold">{{ current_som.student.name }}</h2>
+        <p class="text-amber-100">{{ current_som.student.email }}</p>
+        <p class="mt-2 text-lg">{{ current_som.courses_completed_count }} cours complétés ce mois</p>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-amber-100">Aucun étudiant du mois calculé pour ce mois-ci</p>
+    {% endif %}
+  </div>
+
+  <!-- Previous Winners -->
+  <h2 class="text-xl font-bold text-slate-800 mb-4">Gagnants précédents</h2>
+  {% if previous_winners %}
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="divide-y divide-slate-100">
+      {% for winner in previous_winners %}
+      <div class="p-4 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
+          {{ winner.student.first_name|slice:":1" }}{{ winner.student.last_name|slice:":1" }}
+        </div>
+        <div class="flex-1">
+          <p class="font-semibold text-slate-800">{{ winner.student.name }}</p>
+          <p class="text-sm text-slate-500">{{ winner.month|date:"F Y" }}</p>
+        </div>
+        <div class="text-right">
+          <p class="font-semibold text-slate-800">{{ winner.courses_completed_count }}</p>
+          <p class="text-xs text-slate-500">cours complétés</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <p class="text-slate-500">Aucun historique disponible</p>
+  {% endif %}
+</div>
+{% endblock %}

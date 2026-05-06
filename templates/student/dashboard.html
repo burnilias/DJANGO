@@ -9,20 +9,40 @@
 {% block content %}
 <!-- Welcome Section -->
 <div class="mb-8">
-  <h2 class="text-2xl font-bold mb-2" style="color: #555555;">Bienvenue, {{ request.session.first_name }} !</h2>
-  <p class="text-sm" style="color: #777777;">Voici votre emploi du temps pour cette semaine.</p>
+  <h2 class="text-2xl font-bold mb-2" style="color: #555555;">Bienvenue, {{ session_user.first_name }} !</h2>
+  <p class="text-sm" style="color: #777777;">Votre espace d'apprentissage personnel</p>
 </div>
 
-<!-- Quick Stats -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+<!-- Student of the Month Banner -->
+{% if student_of_month %}
+<div class="mb-6 {% if is_student_of_month %}bg-gradient-to-r from-amber-500 to-orange-500{% else %}bg-gradient-to-r from-blue-500 to-blue-600{% endif %} rounded-xl p-6 text-white shadow-lg">
+  <div class="flex items-center gap-4">
+    <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+      <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    </div>
+    <div class="flex-1">
+      {% if is_student_of_month %}
+      <p class="text-amber-100 font-medium mb-1">Félicitations ! Vous êtes l'Étudiant du Mois</p>
+      <p class="text-2xl font-bold">{{ student_of_month.courses_completed_count }} cours complétés ce mois-ci</p>
+      {% else %}
+      <p class="text-blue-100 font-medium mb-1">Étudiant du Mois</p>
+      <p class="text-xl font-bold">{{ student_of_month.student.name }} - {{ student_of_month.courses_completed_count }} cours complétés</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- LMS Stats -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
   <div class="bg-white rounded-xl border p-5 shadow-sm" style="border-color: #e0e0e0;">
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: rgba(59, 91, 219, 0.1);">
         <svg class="w-6 h-6" style="color: #3b5bdb;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
       </div>
       <div>
-        <p class="text-xs font-medium" style="color: #777777;">Cours cette semaine</p>
-        <p class="text-2xl font-bold" style="color: #3b5bdb;">{{ course_count|default:"12" }}</p>
+        <p class="text-xs font-medium" style="color: #777777;">Mes Cours</p>
+        <p class="text-2xl font-bold" style="color: #3b5bdb;">{{ enrolled_count }}</p>
       </div>
     </div>
   </div>
@@ -33,8 +53,8 @@
         <svg class="w-6 h-6" style="color: #1e9e30;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
       <div>
-        <p class="text-xs font-medium" style="color: #777777;">Présence</p>
-        <p class="text-2xl font-bold" style="color: #1e9e30;">{{ attendance|default:"95%" }}</p>
+        <p class="text-xs font-medium" style="color: #777777;">Complétés</p>
+        <p class="text-2xl font-bold" style="color: #1e9e30;">{{ completed_count }}</p>
       </div>
     </div>
   </div>
@@ -42,39 +62,85 @@
   <div class="bg-white rounded-xl border p-5 shadow-sm" style="border-color: #e0e0e0;">
     <div class="flex items-center gap-3">
       <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: rgba(245, 158, 11, 0.1);">
-        <svg class="w-6 h-6" style="color: #f59e0b;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <svg class="w-6 h-6" style="color: #f59e0b;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
       </div>
       <div>
-        <p class="text-xs font-medium" style="color: #777777;">Prochain cours</p>
-        <p class="text-lg font-bold" style="color: #555555;">{{ next_course|default:"14:00" }}</p>
+        <p class="text-xs font-medium" style="color: #777777;">Certificats</p>
+        <p class="text-2xl font-bold" style="color: #f59e0b;">{{ certificates_count }}</p>
       </div>
     </div>
   </div>
+
+  <a href="{% url 'student_courses_browse' %}" class="bg-white rounded-xl border p-5 shadow-sm hover:shadow-md transition-shadow" style="border-color: #e0e0e0;">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background: rgba(139, 92, 246, 0.1);">
+        <svg class="w-6 h-6" style="color: #8b5cf6;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+      <div>
+        <p class="text-xs font-medium" style="color: #777777;">Explorer</p>
+        <p class="text-lg font-bold" style="color: #8b5cf6;">Cours →</p>
+      </div>
+    </div>
+  </a>
 </div>
 
-<!-- Today's Schedule Preview -->
-<div class="bg-white rounded-xl border shadow-sm overflow-hidden" style="border-color: #e0e0e0;">
+<!-- My Courses Section -->
+<div class="bg-white rounded-xl border shadow-sm overflow-hidden mb-8" style="border-color: #e0e0e0;">
   <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: #e0e0e0; background: #fafafa;">
-    <h3 class="font-semibold" style="color: #555555;">Aujourd'hui — {{ today_name|default:"Lundi" }}</h3>
-    <a href="{% url 'student_schedule' %}" class="text-sm font-medium hover:underline" style="color: #3b5bdb;">Voir tout →</a>
+    <h3 class="font-semibold" style="color: #555555;">Mes Cours en cours</h3>
+    <a href="{% url 'student_my_courses' %}" class="text-sm font-medium hover:underline" style="color: #3b5bdb;">Voir tout →</a>
   </div>
   <div class="divide-y" style="border-color: #f0f0f0;">
-    {% for course in today_courses|default:"" %}
+    {% for enrollment in enrollments %}
     <div class="px-6 py-4 flex items-center gap-4">
-      <div class="text-sm font-medium w-20" style="color: #777777;">{{ course.time }}</div>
-      <div class="flex-1">
-        <p class="font-medium" style="color: #555555;">{{ course.name }}</p>
-        <p class="text-xs" style="color: #777777;">{{ course.room }} • {{ course.teacher }}</p>
+      <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0">
+        {% if enrollment.course.image %}
+        <img src="{{ enrollment.course.image.url }}" alt="" class="w-full h-full object-cover rounded-lg">
+        {% else %}
+        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        {% endif %}
       </div>
-      <span class="px-3 py-1 rounded-full text-xs font-medium" style="background: {{ course.bg_color }}; color: {{ course.text_color }};">
-        {{ course.type }}
-      </span>
+      <div class="flex-1 min-w-0">
+        <p class="font-medium truncate" style="color: #555555;">{{ enrollment.course.title }}</p>
+        <p class="text-xs" style="color: #777777;">par {{ enrollment.course.teacher.name }}</p>
+      </div>
+      <div class="text-right">
+        <div class="w-32 bg-gray-200 rounded-full h-2 mb-1">
+          <div class="bg-blue-600 h-2 rounded-full" style="width: {{ enrollment.progress_percentage }}%"></div>
+        </div>
+        <p class="text-xs" style="color: #777777;">{{ enrollment.progress_percentage }}% complété</p>
+      </div>
     </div>
     {% empty %}
     <div class="px-6 py-8 text-center">
-      <p style="color: #777777;">Aucun cours aujourd'hui</p>
+      <p style="color: #777777;" class="mb-4">Vous n'êtes inscrit à aucun cours</p>
+      <a href="{% url 'student_courses_browse' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Parcourir les cours</a>
     </div>
     {% endfor %}
   </div>
 </div>
+
+<!-- Certificates Section -->
+{% if certificates %}
+<div class="bg-white rounded-xl border shadow-sm overflow-hidden" style="border-color: #e0e0e0;">
+  <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: #e0e0e0; background: #fafafa;">
+    <h3 class="font-semibold" style="color: #555555;">Mes Certificats récents</h3>
+    <a href="{% url 'student_my_certificates' %}" class="text-sm font-medium hover:underline" style="color: #3b5bdb;">Voir tout →</a>
+  </div>
+  <div class="divide-y" style="border-color: #f0f0f0;">
+    {% for cert in certificates %}
+    <div class="px-6 py-4 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center flex-shrink-0">
+        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+      </div>
+      <div class="flex-1">
+        <p class="font-medium" style="color: #555555;">{{ cert.enrollment.course.title }}</p>
+        <p class="text-xs" style="color: #777777;">Certificat #{{ cert.certificate_number }} • {{ cert.issued_at|date:"d/m/Y" }}</p>
+      </div>
+      <a href="{% url 'student_certificate_view' cert.id %}" class="text-sm font-medium" style="color: #3b5bdb;">Voir →</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 {% endblock %}

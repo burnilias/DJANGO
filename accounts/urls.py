@@ -5,6 +5,7 @@ urlpatterns = [
     # Auth API
     path('login/', views.login_view, name='api-login'),
     path('logout/', views.logout_view, name='api-logout'),
+    path('logout/template/', views.logout_template_view, name='logout-template'),
     path('profile/', views.profile_view, name='api-profile'),
 
     # Admin CRUD API
@@ -30,7 +31,7 @@ urlpatterns = [
     path('dashboard/admin/emploi/<int:id>/delete/', views.admin_schedule_delete, name='admin_schedule_delete'),
     
     # Student Dashboard (Readonly)
-    path('dashboard/student/', views.student_dashboard, name='student_dashboard'),
+    path('dashboard/student/', views.student_dashboard_updated, name='student_dashboard'),
     path('dashboard/student/emploi/', views.student_schedule, name='student_schedule'),
     path('dashboard/student/profile/', views.student_profile, name='student_profile'),
     
@@ -39,4 +40,61 @@ urlpatterns = [
     path('api/classes/', views.api_classes_list, name='api_classes_list'),
     path('api/groupes/', views.api_groupes_list, name='api_groupes_list'),
     path('api/affecter-groupe/', views.api_affecter_groupe, name='api_affecter_groupe'),
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # LMS URLS
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    # Admin LMS Management
+    path('dashboard/admin/courses/', views.admin_courses_list, name='admin_courses_list'),
+    path('dashboard/admin/courses/<int:course_id>/edit/', views.admin_course_edit, name='admin_course_edit'),
+    path('dashboard/admin/courses/<int:course_id>/delete/', views.admin_course_delete, name='admin_course_delete'),
+    path('dashboard/admin/courses/<int:course_id>/lessons/', views.admin_course_lessons, name='admin_course_lessons'),
+    path('dashboard/admin/courses/<int:course_id>/enrollments/', views.admin_course_enrollments, name='admin_course_enrollments'),
+    path('dashboard/admin/enrollments/', views.admin_all_enrollments, name='admin_all_enrollments'),
+    path('dashboard/admin/certificates/', views.admin_all_certificates, name='admin_all_certificates'),
+    path('dashboard/admin/student-of-month/', views.admin_student_of_month, name='admin_student_of_month'),
+    path('dashboard/admin/student-of-month/calculate/', views.admin_calculate_som, name='admin_calculate_som'),
+    
+    # Teacher LMS
+    path('dashboard/teacher/', views.teacher_dashboard, name='teacher_dashboard'),
+    path('dashboard/teacher/profile/', views.teacher_profile, name='teacher_profile'),
+    path('dashboard/teacher/courses/', views.teacher_courses, name='teacher_courses'),
+    path('dashboard/teacher/courses/create/', views.teacher_course_create, name='teacher_course_create'),
+    path('dashboard/teacher/courses/<int:course_id>/edit/', views.teacher_course_edit, name='teacher_course_edit'),
+    path('dashboard/teacher/courses/<int:course_id>/delete/', views.teacher_course_delete, name='teacher_course_delete'),
+    path('dashboard/teacher/courses/<int:course_id>/lessons/', views.teacher_course_lessons, name='teacher_course_lessons'),
+    path('dashboard/teacher/courses/<int:course_id>/lessons/create/', views.teacher_lesson_create, name='teacher_lesson_create'),
+    path('dashboard/teacher/courses/<int:course_id>/lessons/<int:lesson_id>/edit/', views.teacher_lesson_edit, name='teacher_lesson_edit'),
+    path('dashboard/teacher/courses/<int:course_id>/lessons/<int:lesson_id>/delete/', views.teacher_lesson_delete, name='teacher_lesson_delete'),
+    path('dashboard/teacher/courses/<int:course_id>/enrollments/', views.teacher_course_enrollments, name='teacher_course_enrollments'),
+    
+    # Student LMS
+    path('dashboard/student/courses/', views.student_courses_browse, name='student_courses_browse'),
+    path('dashboard/student/courses/<int:course_id>/', views.student_course_detail, name='student_course_detail'),
+    path('dashboard/student/courses/<int:course_id>/enroll/', views.student_course_enroll, name='student_course_enroll'),
+    path('dashboard/student/my-courses/', views.student_my_courses, name='student_my_courses'),
+    path('dashboard/student/my-courses/<int:course_id>/learn/', views.student_course_learn, name='student_course_learn'),
+    path('dashboard/student/my-courses/<int:course_id>/lessons/<int:lesson_id>/complete/', views.student_lesson_complete, name='student_lesson_complete'),
+    path('dashboard/student/video-complete/', views.student_video_complete, name='student_video_complete'),
+    path('dashboard/student/courses/<int:course_id>/certificate/', views.course_certificate_pdf, name='course_certificate_pdf'),
+    path('dashboard/student/certificates/', views.student_my_certificates, name='student_my_certificates'),
+    path('dashboard/student/certificates/<int:certificate_id>/', views.student_certificate_view, name='student_certificate_view'),
+    
+    # LMS API Endpoints
+    path('api/courses/<int:course_id>/enroll/', views.api_enroll_course, name='api_enroll_course'),
+    path('api/lessons/<int:lesson_id>/complete/', views.api_complete_lesson, name='api_complete_lesson'),
+    path('api/courses/<int:course_id>/progress/', views.api_get_progress, name='api_get_progress'),
+    path('api/student-of-month/', views.api_get_student_of_month, name='api_get_student_of_month'),
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # CV MAKER URLS
+    # ═══════════════════════════════════════════════════════════════════════
+    path('dashboard/cv/', views.cv_list, name='cv_list'),
+    path('dashboard/cv/create/', views.cv_create, name='cv_create'),
+    path('dashboard/cv/<int:id>/edit/', views.cv_edit, name='cv_edit'),
+    path('dashboard/cv/<int:id>/download/pdf/', views.cv_download_pdf, name='cv_download_pdf'),
+    path('dashboard/cv/<int:id>/download/docx/', views.cv_download_docx, name='cv_download_docx'),
+    path('dashboard/cv/<int:id>/delete/', views.cv_delete, name='cv_delete'),
+    path('dashboard/cv/<int:id>/clone/', views.cv_clone, name='cv_clone'),
 ]

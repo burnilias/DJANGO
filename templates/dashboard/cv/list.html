@@ -1,0 +1,129 @@
+{% extends "dashboard/cv/base_cv.html" %}
+
+{% block page_title %}Mes CVs{% endblock %}
+{% block nav_title %}Mes CVs{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h2 class="text-2xl font-bold" style="color: #555555;">Mes CVs</h2>
+  <p class="text-sm mt-1" style="color: #777777;">Créez et gérez vos curriculum vitae</p>
+</div>
+
+{% if cvs %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+  {% for cv in cvs %}
+  <div class="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow" style="border-color: #e0e0e0; overflow: visible;">
+    <!-- Card Header -->
+    <div class="px-5 py-4 border-b" style="border-color: #f0f0f0; background: #fafafa;">
+      <div class="flex items-start justify-between">
+        <div class="flex-1 min-w-0">
+          <h3 class="font-semibold truncate" style="color: #555555;">{{ cv.title }}</h3>
+          <p class="text-xs mt-1" style="color: #777777;">{{ cv.created_at|date:"d/m/Y" }}</p>
+        </div>
+        {% if cv.photo %}
+        <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 ml-3 border" style="border-color: #e0e0e0;">
+          <img src="{{ cv.photo.url }}" alt="" class="w-full h-full object-cover">
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Card Body -->
+    <div class="px-5 py-3">
+      <div class="flex items-center gap-4 text-xs" style="color: #777777;">
+        <span class="flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V7a2 2 0 012-2h6a2 2 0 012 2v1M7 7h10"/></svg>
+          {{ cv.section_count }} section{{ cv.section_count|pluralize }}
+        </span>
+        <span class="flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Modifié {{ cv.updated_at|date:"d/m/Y" }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Card Actions -->
+    <div class="px-5 py-3 border-t flex items-center gap-2 flex-wrap" style="border-color: #f0f0f0;">
+      <a href="{% url 'cv_edit' cv.id %}"
+         class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+         style="background: rgba(59,91,219,0.1); color: #3b5bdb;"
+         onmouseover="this.style.background='rgba(59,91,219,0.2)'" onmouseout="this.style.background='rgba(59,91,219,0.1)'">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Modifier
+      </a>
+
+      <!-- Clone -->
+      <form method="POST" action="{% url 'cv_clone' cv.id %}" class="inline" id="clone-form-{{ cv.id }}">
+        {% csrf_token %}
+        <button type="submit"
+           class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+           style="background: rgba(30,158,48,0.1); color: #1e9e30;"
+           onmouseover="this.style.background='rgba(30,158,48,0.2)'" onmouseout="this.style.background='rgba(30,158,48,0.1)'">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          Cloner
+        </button>
+      </form>
+
+      <!-- Download Dropdown -->
+      <div class="relative inline-block">
+        <button onclick="toggleDropdown(this)"
+           class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+           style="background: rgba(139,92,246,0.1); color: #8b5cf6;"
+           onmouseover="this.style.background='rgba(139,92,246,0.2)'" onmouseout="this.style.background='rgba(139,92,246,0.1)'">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Télécharger ▾
+        </button>
+        <div class="dropdown-menu" style="z-index: 1000;">
+          <a href="{% url 'cv_download_pdf' cv.id %}">
+            <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            PDF
+          </a>
+          <a href="{% url 'cv_download_docx' cv.id %}">
+            <svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Word (.docx)
+          </a>
+        </div>
+      </div>
+
+      <!-- Delete -->
+      <form method="POST" action="{% url 'cv_delete' cv.id %}" class="inline" id="delete-form-{{ cv.id }}">
+        {% csrf_token %}
+        <button type="button" onclick="confirmDelete('delete-form-{{ cv.id }}')"
+           class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+           style="background: rgba(204,31,31,0.1); color: #cc1f1f;"
+           onmouseover="this.style.background='rgba(204,31,31,0.2)'" onmouseout="this.style.background='rgba(204,31,31,0.1)'">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Supprimer
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="bg-white rounded-xl border shadow-sm p-12 text-center" style="border-color: #e0e0e0;">
+  <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style="background: rgba(59,91,219,0.1);">
+    <svg class="w-8 h-8" style="color: #3b5bdb;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+  </div>
+  <h3 class="text-lg font-semibold mb-2" style="color: #555555;">Aucun CV</h3>
+  <p class="text-sm mb-6" style="color: #777777;">Commencez par créer votre premier curriculum vitae</p>
+  <a href="{% url 'cv_create' %}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-colors" style="background: #3b5bdb;" onmouseover="this.style.background='#2d4fd6'" onmouseout="this.style.background='#3b5bdb'">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Créer un CV
+  </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block fab %}
+<div class="fab-container">
+  <a href="{% url 'cv_create' %}" class="fab fab-primary">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Nouveau CV
+  </a>
+  <a href="{% url 'student_dashboard' %}" class="fab fab-secondary">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 2l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/></svg>
+    Dashboard
+  </a>
+</div>
+{% endblock %}

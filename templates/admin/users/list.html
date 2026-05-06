@@ -398,6 +398,26 @@
               </select>
             </div>
           </div>
+          <div>
+            <label class="block text-xs font-semibold mb-2" style="color: #777777;">Groupe</label>
+            <select id="edit-groupe-id" name="groupe_id" class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2"
+                    style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                    onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                    onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'">
+              <option value="">-- Aucun groupe --</option>
+              {% for g in groupes %}
+              <option value="{{ g.id }}">{{ g.classe.nom }} — {{ g.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-2" style="color: #777777;">Bio</label>
+            <textarea id="edit-bio" name="bio" rows="2" placeholder="Bio de l'utilisateur..."
+                      class="w-full border rounded-xl px-4 py-3 text-sm transition-all focus:outline-none focus:ring-2 resize-none"
+                      style="background: #fafafa; border-color: #e0e0e0; color: #555555;"
+                      onfocus="this.style.borderColor='#3b5bdb'; this.style.boxShadow='0 0 0 3px rgba(59, 91, 219, 0.1)'"
+                      onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none'"></textarea>
+          </div>
           <!-- Optional password change -->
           <div class="border-t pt-4" style="border-color: #e0e0e0;">
             <label class="flex items-center gap-2 text-xs font-semibold cursor-pointer" style="color: #777777;">
@@ -515,6 +535,7 @@ function openEditModal(userId) {
       document.getElementById('edit-email').value = data.email;
       document.getElementById('edit-phone').value = data.phone;
       document.getElementById('edit-bio').value = data.bio;
+      document.getElementById('edit-groupe-id').value = data.groupe_id || '';
       document.getElementById('edit-role').value = data.role;
       document.getElementById('edit-status').value = data.status;
       if (data.is_self) {

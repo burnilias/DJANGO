@@ -24,8 +24,10 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
+    from django.conf.urls.static import static
     urlpatterns += [
         re_path(r'^(?P<file_path>(?:css|js|html|img)/.*)$', frontend_view),
         re_path(r'^(?P<file_path>index\.html)$', frontend_view),
         path('', frontend_view, {'file_path': ''}),
     ]
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

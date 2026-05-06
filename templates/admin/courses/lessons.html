@@ -1,0 +1,66 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block content %}
+<div class="p-4 md:p-8 max-w-5xl mx-auto">
+  <div class="mb-8">
+    <a href="{% url 'admin_courses_list' %}" class="text-slate-500 hover:text-slate-700 text-sm inline-flex items-center gap-1 mb-4">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Retour aux cours
+    </a>
+    <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Leçons du cours</h1>
+    <p class="text-slate-500 mt-1">{{ course.title }} — par {{ course.teacher.name }}</p>
+  </div>
+
+  {% if lessons %}
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr>
+            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700">#</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700">Titre</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700">Durée</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700">Vidéo</th>
+            <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700">Ordre</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for lesson in lessons %}
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="px-6 py-4 text-sm text-slate-500">{{ forloop.counter }}</td>
+            <td class="px-6 py-4 text-sm font-medium text-slate-800">{{ lesson.title }}</td>
+            <td class="px-6 py-4 text-sm text-slate-600">
+              {% if lesson.duration_minutes > 0 %}
+                {{ lesson.duration_minutes }} min
+              {% else %}
+                <span class="text-slate-400">—</span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-sm">
+              {% if lesson.video_url %}
+              <a href="{{ lesson.video_url }}" target="_blank" class="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Voir
+              </a>
+              {% else %}
+              <span class="text-slate-400">—</span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-sm text-slate-600">{{ lesson.order }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="bg-white rounded-xl p-12 text-center shadow-sm border border-slate-200">
+    <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+    </div>
+    <h3 class="text-lg font-semibold text-slate-800 mb-2">Aucune leçon</h3>
+    <p class="text-slate-500">Ce cours ne contient aucune leçon pour l'instant</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

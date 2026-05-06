@@ -167,9 +167,9 @@
                 if (data.role === 'admin') {
                     dashboardUrl = '/api/auth/dashboard/admin/';
                 } else if (data.role === 'teacher') {
-                    dashboardUrl = '/api/auth/dashboard/admin/';  // TODO: teacher dashboard
-                } else {
-                    dashboardUrl = '/api/auth/dashboard/admin/';  // TODO: student dashboard
+                    dashboardUrl = '/api/auth/dashboard/teacher/';
+                } else if (data.role === 'student') {
+                    dashboardUrl = '/api/auth/dashboard/student/';
                 }
 
                 window.location.href = dashboardUrl;

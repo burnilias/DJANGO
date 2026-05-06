@@ -24,3 +24,32 @@ class GroupeAdmin(admin.ModelAdmin):
     list_display = ('nom', 'classe', 'created_at')
     list_filter = ('classe',)
     search_fields = ('nom',)
+
+
+from .models import CV
+
+
+@admin.register(CV)
+class CVAdmin(admin.ModelAdmin):
+    list_display = ('title', 'user', 'created_at', 'updated_at')
+    list_filter = ('user__role',)
+    search_fields = ('title', 'user__email')
+    ordering = ('-updated_at',)
+
+
+from .models import LessonVideo, VideoCompletion
+
+
+@admin.register(LessonVideo)
+class LessonVideoAdmin(admin.ModelAdmin):
+    list_display = ('lesson', 'title', 'url', 'order')
+    list_filter = ('lesson__course',)
+    search_fields = ('title', 'url')
+    ordering = ('order',)
+
+
+@admin.register(VideoCompletion)
+class VideoCompletionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'lesson_video', 'completed_at')
+    list_filter = ('user',)
+    ordering = ('-completed_at',)

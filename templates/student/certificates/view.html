@@ -1,0 +1,83 @@
+{% extends 'student/base_student.html' %}
+
+{% block content %}
+<div class="p-4 md:p-8 max-w-4xl mx-auto">
+  <div class="mb-6">
+    <a href="{% url 'student_my_certificates' %}" class="text-slate-500 hover:text-slate-700 text-sm inline-flex items-center gap-1 mb-4">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Retour aux certificats
+    </a>
+  </div>
+
+  <!-- Certificate -->
+  <div class="bg-white rounded-2xl shadow-lg border-4 border-amber-200 p-8 md:p-12 text-center relative overflow-hidden">
+    <!-- Decorative elements -->
+    <div class="absolute top-0 left-0 w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 opacity-20 rounded-br-full"></div>
+    <div class="absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 opacity-20 rounded-tl-full"></div>
+    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-400 to-orange-500 opacity-20 rounded-bl-full"></div>
+    <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-400 to-orange-500 opacity-20 rounded-tr-full"></div>
+    
+    <!-- Content -->
+    <div class="relative z-10">
+      <!-- Header -->
+      <div class="mb-8">
+        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-bold text-amber-600 mb-2">CERTIFICAT</h1>
+        <p class="text-slate-500 text-lg">de réussite</p>
+      </div>
+
+      <!-- Recipient -->
+      <div class="mb-8">
+        <p class="text-slate-500 mb-2">Décerné à</p>
+        <h2 class="text-2xl md:text-3xl font-bold" style="color: #555555;">{{ session_user.name }}</h2>
+      </div>
+
+      <!-- Course -->
+      <div class="mb-8">
+        <p class="text-slate-500 mb-2">Pour avoir complété avec succès le cours</p>
+        <h3 class="text-xl md:text-2xl font-semibold" style="color: #3b5bdb;">{{ certificate.enrollment.course.title }}</h3>
+      </div>
+
+      <!-- Details -->
+      <div class="flex flex-wrap justify-center gap-8 text-sm mb-8">
+        <div>
+          <p class="text-slate-500">Numéro de certificat</p>
+          <p class="font-mono font-semibold" style="color: #555555;">{{ certificate.certificate_number }}</p>
+        </div>
+        <div>
+          <p class="text-slate-500">Date d'émission</p>
+          <p class="font-semibold" style="color: #555555;">{{ certificate.issued_at|date:"d/m/Y" }}</p>
+        </div>
+        <div>
+          <p class="text-slate-500">Enseignant</p>
+          <p class="font-semibold" style="color: #555555;">{{ certificate.enrollment.course.teacher.name }}</p>
+        </div>
+      </div>
+
+      <!-- Signature -->
+      <div class="border-t border-slate-200 pt-6 mt-6">
+        <p class="text-slate-400 text-sm">EMSI Learning Management System</p>
+        <p class="text-slate-400 text-xs mt-1">Ce certificat atteste de la réussite du cours</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex justify-center gap-4 mt-6">
+    <button onclick="window.print()" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+      Imprimer
+    </button>
+  </div>
+</div>
+
+<style>
+@media print {
+  body * { visibility: hidden; }
+  .rounded-2xl, .rounded-2xl * { visibility: visible; }
+  .rounded-2xl { position: absolute; left: 0; top: 0; width: 100%; }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,366 @@
+{% extends "dashboard/cv/base_cv.html" %}
+
+{% block page_title %}{% if cv %}Modifier le CV{% else %}Créer un CV{% endif %}{% endblock %}
+{% block nav_title %}{% if cv %}Modifier le CV{% else %}Créer un CV{% endif %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .section-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;transition:box-shadow .2s}
+  .section-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.06)}
+  .section-header{padding:10px 16px;background:#fafafa;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:6px}
+  .entry-row{padding:12px 16px;border-bottom:1px solid #f5f5f5}
+  .entry-row:last-child{border-bottom:none}
+  .cv-input{width:100%;padding:7px 11px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;color:#555;transition:border-color .15s;font-family:'Inter',sans-serif}
+  .cv-input:focus{outline:none;border-color:#3b5bdb;box-shadow:0 0 0 3px rgba(59,91,219,.1)}
+  .cv-textarea{resize:vertical;min-height:56px}
+  .btn-sm{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;border:none;background:transparent}
+  .btn-add{background:rgba(59,91,219,.1);color:#3b5bdb}
+  .btn-add:hover{background:rgba(59,91,219,.2)}
+  .btn-remove{background:rgba(204,31,31,.08);color:#cc1f1f}
+  .btn-remove:hover{background:rgba(204,31,31,.15)}
+  .btn-move{color:#999;padding:4px}
+  .btn-move:hover{color:#3b5bdb}
+  .section-type-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}
+  .add-section-menu{display:none;position:absolute;bottom:100%;left:0;margin-bottom:8px;background:#fff;border:1px solid #e0e0e0;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);padding:6px;min-width:240px;z-index:40}
+  .add-section-menu.show{display:block}
+  .add-section-menu button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;background:transparent;border-radius:6px;font-size:13px;color:#555;cursor:pointer;transition:background .12s;font-family:'Inter',sans-serif;text-align:left}
+  .add-section-menu button:hover{background:#f0f2f8;color:#3b5bdb}
+  .toggle-switch{position:relative;width:44px;height:24px;background:#d1d5db;border-radius:12px;cursor:pointer;transition:background .2s;flex-shrink:0}
+  .toggle-switch.active{background:#3b5bdb}
+  .toggle-switch::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .toggle-switch.active::after{transform:translateX(20px)}
+</style>
+{% endblock %}
+
+{% block content %}
+<form id="cv-form" method="POST" enctype="multipart/form-data">
+  {% csrf_token %}
+  <input type="hidden" name="cv_data" id="cv-data">
+  {% if cv and cv.photo %}
+  <input type="hidden" name="remove_photo" id="remove-photo" value="0">
+  {% endif %}
+
+  <!-- Title & Photo -->
+  <div class="bg-white rounded-xl border shadow-sm p-6 mb-5" style="border-color:#e0e0e0">
+    <div class="flex flex-col md:flex-row gap-5">
+      <div class="flex-1">
+        <label class="block text-xs font-medium mb-1.5" style="color:#777">Titre du CV *</label>
+        <input type="text" name="title" id="cv-title" value="{% if cv %}{{ cv.title }}{% endif %}"
+               class="cv-input" placeholder="Ex: CV Développeur Full-Stack" required>
+      </div>
+      <div class="flex-shrink-0">
+        <label class="block text-xs font-medium mb-1.5" style="color:#777">Photo</label>
+        <div class="flex items-center gap-3">
+          <div id="photo-toggle" class="toggle-switch {% if cv and cv.photo %}active{% endif %}" onclick="togglePhoto()"></div>
+          <span class="text-xs" style="color:#777" id="photo-label">{% if cv and cv.photo %}Avec photo{% else %}Sans photo{% endif %}</span>
+        </div>
+        <div id="photo-upload" class="mt-2 {% if not cv or not cv.photo %}hidden{% endif %}">
+          {% if cv and cv.photo %}
+          <div id="existing-photo" class="flex items-center gap-2 mb-2">
+            <img src="{{ cv.photo.url }}" alt="" class="w-10 h-10 rounded-lg object-cover border" style="border-color:#e0e0e0">
+            <button type="button" onclick="removePhoto()" class="btn-sm btn-remove">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>Retirer
+            </button>
+          </div>
+          {% endif %}
+          <input type="file" name="photo" accept="image/*" class="cv-input text-xs" style="padding:6px">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sections -->
+  <div id="sections-container" class="space-y-4 mb-5"></div>
+
+  <!-- Add Section -->
+  <div class="relative inline-block">
+    <button type="button" onclick="toggleAddSectionMenu()" class="btn-sm btn-add px-4 py-2.5 rounded-lg text-sm">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Ajouter une section
+    </button>
+    <div id="add-section-menu" class="add-section-menu">
+      <button type="button" onclick="addSection('personal_info')">
+        <svg class="w-4 h-4" style="color:#555" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        Informations personnelles
+      </button>
+      <button type="button" onclick="addSection('experience')">
+        <svg class="w-4 h-4" style="color:#3b5bdb" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A37.932 37.932 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        Expérience professionnelle
+      </button>
+      <button type="button" onclick="addSection('education')">
+        <svg class="w-4 h-4" style="color:#1e9e30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 14l9-5-9-5-9 5 9 5zm0 7l9-5-9-5-9 5 9 5z"/></svg>
+        Formation
+      </button>
+      <button type="button" onclick="addSection('skills')">
+        <svg class="w-4 h-4" style="color:#f59e0b" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        Compétences
+      </button>
+      <button type="button" onclick="addSection('languages')">
+        <svg class="w-4 h-4" style="color:#0891b2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+        Langues
+      </button>
+      <button type="button" onclick="addSection('interests')">
+        <svg class="w-4 h-4" style="color:#ec4899" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        Centres d'intérêt
+      </button>
+      <button type="button" onclick="addSection('references')">
+        <svg class="w-4 h-4" style="color:#6366f1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.939-5.247C3.453 13.18 3 11.636 3 10c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        Références
+      </button>
+      <button type="button" onclick="addSection('custom')">
+        <svg class="w-4 h-4" style="color:#777" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        Personnalisé
+      </button>
+    </div>
+  </div>
+
+  <!-- Save -->
+  <div class="mt-6 flex items-center gap-3">
+    <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium text-white transition-colors" style="background:#3b5bdb" onmouseover="this.style.background='#2d4fd6'" onmouseout="this.style.background='#3b5bdb'">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      {% if cv %}Enregistrer les modifications{% else %}Créer le CV{% endif %}
+    </button>
+    <a href="{% url 'cv_list' %}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors" style="color:#777;background:#fff;border:1px solid #e0e0e0" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='#fff'">Annuler</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const SECTION_TYPES = {
+  personal_info: {
+    label: 'Informations personnelles',
+    color: '#555',
+    bg: 'rgba(85,85,85,.1)',
+    defaultTitle: 'Informations personnelles',
+    singleEntry: true,
+    fields: [
+      {key:'first_name',label:'Prénom',placeholder:''},
+      {key:'last_name',label:'Nom',placeholder:''},
+      {key:'job_title',label:'Poste occupé / recherché',placeholder:'Ex: Développeur Full-Stack'},
+      {key:'phone',label:'Téléphone',placeholder:''},
+      {key:'email',label:'Email',placeholder:''},
+      {key:'city',label:'Ville',placeholder:''},
+      {key:'country',label:'Pays',placeholder:''},
+      {key:'linkedin',label:'LinkedIn',placeholder:'Ex: linkedin.com/in/...'},
+      {key:'intro',label:"Paragraphe d'introduction",placeholder:'',type:'textarea'},
+    ]
+  },
+  experience: {
+    label: 'Expérience professionnelle',
+    color: '#3b5bdb',
+    bg: 'rgba(59,91,219,.1)',
+    defaultTitle: 'EXPÉRIENCE PROFESSIONNELLE',
+    fields: [
+      {key:'title',label:'Poste',placeholder:'Ex: Développeur Full-Stack'},
+      {key:'company',label:'Entreprise',placeholder:'Ex: EMSI Tech'},
+      {key:'period',label:'Période',placeholder:'Ex: Jan 2023 – Présent'},
+      {key:'location',label:'Lieu',placeholder:'Ex: Casablanca'},
+      {key:'bullets',label:'Réalisations (une par ligne)',placeholder:'Développé une application...\nDirigé une équipe...',type:'textarea'},
+    ]
+  },
+  education: {
+    label: 'Formation',
+    color: '#1e9e30',
+    bg: 'rgba(30,158,48,.1)',
+    defaultTitle: 'FORMATION',
+    fields: [
+      {key:'title',label:'Diplôme',placeholder:'Ex: Master en Informatique'},
+      {key:'institution',label:'Institution',placeholder:'Ex: Université Mohammed V'},
+      {key:'period',label:'Période',placeholder:'Ex: 2019 – 2023'},
+      {key:'location',label:'Lieu',placeholder:'Ex: Rabat'},
+    ]
+  },
+  skills: {
+    label: 'Compétences',
+    color: '#f59e0b',
+    bg: 'rgba(245,158,11,.1)',
+    defaultTitle: 'COMPÉTENCES',
+    simpleList: true,
+    fields: [
+      {key:'name',label:'Compétence',placeholder:'Ex: Python, JavaScript, Django'},
+    ]
+  },
+  languages: {
+    label: 'Langues',
+    color: '#0891b2',
+    bg: 'rgba(8,145,178,.1)',
+    defaultTitle: 'LANGUES',
+    fields: [
+      {key:'name',label:'Langue',placeholder:'Ex: Français'},
+      {key:'level',label:'Niveau',placeholder:'Ex: Courant, B2, Natif'},
+    ]
+  },
+  interests: {
+    label: "Centres d'intérêt",
+    color: '#ec4899',
+    bg: 'rgba(236,72,153,.1)',
+    defaultTitle: "CENTRES D'INTÉRÊT",
+    simpleList: true,
+    fields: [
+      {key:'name',label:"Centre d'intérêt",placeholder:'Ex: Lecture, Sport, Musique'},
+    ]
+  },
+  references: {
+    label: 'Références',
+    color: '#6366f1',
+    bg: 'rgba(99,102,241,.1)',
+    defaultTitle: 'RÉFÉRENCES',
+    singleEntry: true,
+    fields: [
+      {key:'text',label:'Références',placeholder:'Disponibles sur demande, ou nommez vos référents...',type:'textarea'},
+    ]
+  },
+  custom: {
+    label: 'Personnalisé',
+    color: '#777',
+    bg: 'rgba(119,119,119,.1)',
+    defaultTitle: 'Section personnalisée',
+    fields: [
+      {key:'title',label:'Titre',placeholder:''},
+      {key:'subtitle',label:'Sous-titre',placeholder:''},
+      {key:'period',label:'Date / Période',placeholder:''},
+      {key:'description',label:'Description',placeholder:'',type:'textarea'},
+    ]
+  }
+};
+
+let sections = [];
+let sectionIdCounter = 0;
+
+{% if cv and cv_data_json != '{}' %}
+try {
+  const existingData = {{ cv_data_json|safe }};
+  if (existingData.sections) {
+    sections = existingData.sections.map(s => ({...s, _id: sectionIdCounter++}));
+  }
+} catch(e) { console.error('Load error', e); }
+{% endif %}
+
+function togglePhoto() {
+  const t = document.getElementById('photo-toggle');
+  const u = document.getElementById('photo-upload');
+  const l = document.getElementById('photo-label');
+  t.classList.toggle('active');
+  const on = t.classList.contains('active');
+  u.classList.toggle('hidden', !on);
+  l.textContent = on ? 'Avec photo' : 'Sans photo';
+}
+
+function removePhoto() {
+  document.getElementById('remove-photo').value = '1';
+  const el = document.getElementById('existing-photo');
+  if (el) el.remove();
+}
+
+function toggleAddSectionMenu() {
+  document.getElementById('add-section-menu').classList.toggle('show');
+}
+document.addEventListener('click', function(e) {
+  const m = document.getElementById('add-section-menu');
+  if (m && !m.parentElement.contains(e.target)) m.classList.remove('show');
+});
+
+function addSection(type) {
+  const td = SECTION_TYPES[type];
+  const sec = { _id: sectionIdCounter++, type, title: td.defaultTitle, entries: [] };
+  if (td.singleEntry) sec.entries = [{}];
+  sections.push(sec);
+  renderSections();
+  document.getElementById('add-section-menu').classList.remove('show');
+  setTimeout(() => {
+    const el = document.getElementById('section-' + sec._id);
+    if (el) el.scrollIntoView({behavior:'smooth',block:'center'});
+  }, 50);
+}
+
+function removeSection(id) { sections = sections.filter(s => s._id !== id); renderSections(); }
+function updateSectionTitle(id, v) { const s = sections.find(x => x._id === id); if (s) s.title = v; }
+
+function moveSectionUp(id) {
+  const i = sections.findIndex(s => s._id === id);
+  if (i > 0) { [sections[i-1], sections[i]] = [sections[i], sections[i-1]]; renderSections(); }
+}
+function moveSectionDown(id) {
+  const i = sections.findIndex(s => s._id === id);
+  if (i < sections.length - 1) { [sections[i], sections[i+1]] = [sections[i+1], sections[i]]; renderSections(); }
+}
+
+function addEntry(id) {
+  const s = sections.find(x => x._id === id);
+  if (s) { s.entries.push({}); renderSections(); }
+}
+function removeEntry(id, idx) {
+  const s = sections.find(x => x._id === id);
+  if (s) { s.entries.splice(idx, 1); renderSections(); }
+}
+function updateEntry(id, idx, key, val) {
+  const s = sections.find(x => x._id === id);
+  if (s && s.entries[idx]) s.entries[idx][key] = val;
+}
+
+function esc(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;') : ''; }
+
+function renderSections() {
+  const c = document.getElementById('sections-container');
+  c.innerHTML = '';
+  sections.forEach((sec, secIdx) => {
+    const td = SECTION_TYPES[sec.type] || SECTION_TYPES.custom;
+    const card = document.createElement('div');
+    card.className = 'section-card';
+    card.id = 'section-' + sec._id;
+
+    // Header with reorder arrows
+    let h = `<div class="section-header">
+      <button type="button" onclick="moveSectionUp(${sec._id})" class="btn-sm btn-move" title="Monter" ${secIdx===0?'disabled style="opacity:.3"':''}>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+      </button>
+      <button type="button" onclick="moveSectionDown(${sec._id})" class="btn-sm btn-move" title="Descendre" ${secIdx===sections.length-1?'disabled style="opacity:.3"':''}>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <span class="section-type-badge" style="background:${td.bg};color:${td.color}">${td.label}</span>
+      <input type="text" value="${esc(sec.title)}" class="cv-input flex-1" style="max-width:280px;font-weight:600" placeholder="Titre de la section" oninput="updateSectionTitle(${sec._id},this.value)">
+      <button type="button" onclick="removeSection(${sec._id})" class="btn-sm btn-remove" title="Supprimer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </button>
+    </div>`;
+
+    // Entries
+    let ehtml = '';
+    sec.entries.forEach((entry, idx) => {
+      let fhtml = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">';
+      td.fields.forEach(f => {
+        const v = entry[f.key] || '';
+        const span = (f.type === 'textarea' && td.fields.length > 2) ? 'md:col-span-2' : '';
+        if (f.type === 'textarea') {
+          fhtml += `<div class="${span}"><label class="block text-[11px] font-medium mb-1" style="color:#777">${f.label}</label><textarea class="cv-input cv-textarea" placeholder="${esc(f.placeholder||'')}" oninput="updateEntry(${sec._id},${idx},'${f.key}',this.value)">${esc(v)}</textarea></div>`;
+        } else {
+          fhtml += `<div><label class="block text-[11px] font-medium mb-1" style="color:#777">${f.label}</label><input type="text" class="cv-input" value="${esc(v)}" placeholder="${esc(f.placeholder||'')}" oninput="updateEntry(${sec._id},${idx},'${f.key}',this.value)"></div>`;
+        }
+      });
+      fhtml += '</div>';
+      const canRemove = !td.singleEntry;
+      ehtml += `<div class="entry-row"><div class="flex items-start justify-between gap-2"><div class="flex-1">${fhtml}</div>${canRemove ? `<button type="button" onclick="removeEntry(${sec._id},${idx})" class="btn-sm btn-remove mt-5 flex-shrink-0" title="Supprimer"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>` : ''}</div></div>`;
+    });
+
+    // Footer: add entry button (not for singleEntry)
+    let footer = '';
+    if (!td.singleEntry) {
+      const addLabel = td.simpleList ? 'Ajouter une compétence' : 'Ajouter une entrée';
+      footer = `<div class="px-4 py-3" style="background:#fafafa"><button type="button" onclick="addEntry(${sec._id})" class="btn-sm btn-add"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>${addLabel}</button></div>`;
+    }
+
+    card.innerHTML = h + ehtml + footer;
+    c.appendChild(card);
+  });
+}
+
+document.getElementById('cv-form').addEventListener('submit', function() {
+  document.getElementById('cv-data').value = JSON.stringify({
+    sections: sections.map(s => ({type: s.type, title: s.title, entries: s.entries}))
+  });
+});
+
+renderSections();
+</script>
+{% endblock %}

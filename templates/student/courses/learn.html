@@ -1,0 +1,167 @@
+{% extends 'student/base_student.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="p-4 md:p-8 max-w-5xl mx-auto">
+  <!-- Header -->
+  <div class="mb-8">
+    <a href="{% url 'student_my_courses' %}" class="text-slate-500 hover:text-slate-700 text-sm inline-flex items-center gap-1 mb-4">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Retour à mes cours
+    </a>
+    <h1 class="text-2xl md:text-3xl font-bold" style="color: #555555;">{{ course.title }}</h1>
+    <p class="mt-1" style="color: #777777;">par {{ course.teacher.name }}</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="bg-white rounded-xl p-5 shadow-sm border mb-6" style="border-color: #e0e0e0;">
+    <div class="flex items-center justify-between mb-2">
+      <span class="font-medium" style="color: #555555;">Progression du cours</span>
+      <span id="progress-pct" class="font-bold" style="color: #3b5bdb;">{{ progress_percentage }}%</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-3">
+      <div id="progress-bar" class="bg-blue-600 h-3 rounded-full transition-all" style="width: {{ progress_percentage }}%"></div>
+    </div>
+    {% if total_videos > 0 %}
+    <p class="text-sm mt-2" style="color: #777777;"><span id="completed-videos">{{ completed_videos }}</span> sur <span id="total-videos">{{ total_videos }}</span> vidéos complétées</p>
+    {% else %}
+    <p class="text-sm mt-2" style="color: #777777;">{{ completed_lessons }} sur {{ total_lessons }} leçons complétées</p>
+    {% endif %}
+  </div>
+
+  <!-- Certificate Banner -->
+  <div id="certificate-banner" class="{% if progress_percentage < 100 %}hidden{% endif %} bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-6 text-white mb-6">
+    <div class="flex items-center gap-4">
+      <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="text-lg font-bold">Félicitations ! Vous avez terminé ce cours</h3>
+      </div>
+      <a href="{% url 'course_certificate_pdf' course.id %}" class="px-4 py-2 bg-white text-amber-600 rounded-lg font-medium inline-flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Télécharger mon certificat
+      </a>
+    </div>
+  </div>
+
+  <!-- Lessons -->
+  <div class="bg-white rounded-xl shadow-sm border overflow-hidden" style="border-color: #e0e0e0;">
+    <div class="px-6 py-4 border-b" style="border-color: #e0e0e0; background: #fafafa;">
+      <h3 class="font-semibold" style="color: #555555;">Leçons du cours</h3>
+    </div>
+    <div class="divide-y" style="border-color: #f0f0f0;">
+      {% for lesson in lessons %}
+      <div class="p-4 md:p-6">
+        <div class="flex items-start gap-4 {% if progress_dict|get_item:lesson.id and progress_dict|get_item:lesson.id.is_completed %}bg-green-50{% endif %}">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 {% if progress_dict|get_item:lesson.id and progress_dict|get_item:lesson.id.is_completed %}bg-green-500 text-white{% else %}bg-slate-100 text-slate-500{% endif %}">
+            {% if progress_dict|get_item:lesson.id and progress_dict|get_item:lesson.id.is_completed %}
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            {% else %}
+            <span class="text-sm font-bold">{{ forloop.counter }}</span>
+            {% endif %}
+          </div>
+          <div class="flex-1">
+            <h4 class="font-medium" style="color: #555555;">{{ lesson.title }}</h4>
+            {% if lesson.duration_minutes > 0 %}
+            <p class="text-xs mt-1" style="color: #777777;">{{ lesson.duration_minutes }} min</p>
+            {% endif %}
+          </div>
+          {% if not progress_dict|get_item:lesson.id or not progress_dict|get_item:lesson.id.is_completed %}
+          <a href="{% url 'student_lesson_complete' course.id lesson.id %}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+            Marquer comme terminé
+          </a>
+          {% else %}
+          <span class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium">Terminé</span>
+          {% endif %}
+        </div>
+
+        <!-- Video links for this lesson -->
+        {% with lesson_videos|get_item:lesson.id as vids %}
+        {% if vids %}
+        <div class="mt-3 ml-14 space-y-2">
+          {% for v in vids %}
+          <div id="video-row-{{ v.id }}" class="flex items-center gap-3 p-2 rounded-lg {% if v.id in completed_video_ids %}bg-green-50{% else %}bg-slate-50{% endif %}">
+            {% if v.id in completed_video_ids %}
+            <span class="flex-shrink-0 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold">&#10003;</span>
+            {% else %}
+            <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </span>
+            {% endif %}
+            <a href="{{ v.url }}" target="_blank" rel="noopener" onclick="markVideoComplete({{ v.id }})"
+               class="flex-1 text-sm font-medium {% if v.id in completed_video_ids %}text-green-700{% else %}text-blue-600 hover:text-blue-800{% endif %} hover:underline truncate">
+              {{ v.title|default:v.url }}
+            </a>
+            {% if not v.id in completed_video_ids %}
+            <button onclick="markVideoComplete({{ v.id }})" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded text-xs font-medium transition-colors">
+              Terminé
+            </button>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+      </div>
+      {% empty %}
+      <div class="p-8 text-center">
+        <p style="color: #777777;">Aucune leçon dans ce cours</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+const CSRF_TOKEN = '{{ csrf_token }}';
+const VIDEO_COMPLETE_URL = '{% url "student_video_complete" %}';
+
+function markVideoComplete(videoId) {
+  fetch(VIDEO_COMPLETE_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': CSRF_TOKEN,
+    },
+    body: JSON.stringify({ video_id: videoId }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.completed) {
+      // Update the video row visually
+      const row = document.getElementById('video-row-' + videoId);
+      if (row) {
+        row.className = 'flex items-center gap-3 p-2 rounded-lg bg-green-50';
+        const icon = row.querySelector('.flex-shrink-0');
+        if (icon) {
+          icon.className = 'flex-shrink-0 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold';
+          icon.innerHTML = '&#10003;';
+        }
+        const link = row.querySelector('a');
+        if (link) {
+          link.className = 'flex-1 text-sm font-medium text-green-700 hover:underline truncate';
+        }
+        const btn = row.querySelector('button');
+        if (btn) btn.remove();
+      }
+
+      // Update progress bar
+      const pctEl = document.getElementById('progress-pct');
+      const barEl = document.getElementById('progress-bar');
+      const compVids = document.getElementById('completed-videos');
+      if (pctEl) pctEl.textContent = data.progress_percentage + '%';
+      if (barEl) barEl.style.width = data.progress_percentage + '%';
+      if (compVids) compVids.textContent = data.completed_videos;
+
+      // Show certificate banner if 100%
+      if (data.course_completed) {
+        const banner = document.getElementById('certificate-banner');
+        if (banner) banner.classList.remove('hidden');
+      }
+    }
+  })
+  .catch(err => console.error('Video complete error:', err));
+}
+</script>
+{% endblock %}

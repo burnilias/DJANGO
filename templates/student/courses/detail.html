@@ -1,0 +1,83 @@
+{% extends 'student/base_student.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="p-4 md:p-8 max-w-5xl mx-auto">
+  <!-- Header -->
+  <div class="mb-8">
+    <a href="{% url 'student_courses_browse' %}" class="text-slate-500 hover:text-slate-700 text-sm inline-flex items-center gap-1 mb-4">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Retour aux cours
+    </a>
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold" style="color: #555555;">{{ course.title }}</h1>
+        <p class="mt-1" style="color: #777777;">par {{ course.teacher.name }}</p>
+      </div>
+      {% if is_enrolled %}
+      <a href="{% url 'student_course_learn' course.id %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Continuer
+      </a>
+      {% else %}
+      <a href="{% url 'student_course_enroll' course.id %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        S'inscrire
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Course Info -->
+  <div class="bg-white rounded-xl p-6 shadow-sm border mb-6" style="border-color: #e0e0e0;">
+    <div class="flex flex-wrap items-center gap-4 mb-4">
+      <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Publié</span>
+      <span class="text-sm" style="color: #777777;">{{ lessons|length }} leçons</span>
+      <span class="text-sm" style="color: #777777;">{{ course.enrolled_count }} étudiants inscrits</span>
+    </div>
+    <p class="text-sm" style="color: #555555;">{{ course.description|default:"Aucune description disponible"|linebreaks }}</p>
+  </div>
+
+  <!-- Lessons Preview -->
+  <div class="bg-white rounded-xl shadow-sm border overflow-hidden" style="border-color: #e0e0e0;">
+    <div class="px-6 py-4 border-b" style="border-color: #e0e0e0; background: #fafafa;">
+      <h3 class="font-semibold" style="color: #555555;">Contenu du cours</h3>
+    </div>
+    <div class="divide-y" style="border-color: #f0f0f0;">
+      {% for lesson in lessons %}
+      <div class="p-4 md:p-6">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+            <span class="text-blue-700 font-bold text-sm">{{ forloop.counter }}</span>
+          </div>
+          <div class="flex-1">
+            <h4 class="font-medium" style="color: #555555;">{{ lesson.title }}</h4>
+            {% if lesson.duration_minutes > 0 %}
+            <p class="text-xs mt-1" style="color: #777777;">{{ lesson.duration_minutes }} min</p>
+            {% endif %}
+          </div>
+        </div>
+        <!-- Video links for this lesson -->
+        {% with lesson_videos|get_item:lesson.id as vids %}
+        {% if vids %}
+        <div class="mt-3 ml-14 flex flex-wrap gap-2">
+          {% for v in vids %}
+          <a href="{{ v.url }}" target="_blank" rel="noopener"
+             class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-medium transition-colors border border-blue-200">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            {{ v.title|default:"Voir la vidéo" }}
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+      </div>
+      {% empty %}
+      <div class="p-8 text-center">
+        <p style="color: #777777;">Aucune leçon dans ce cours pour l'instant</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
