@@ -1,0 +1,552 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Public — EMSI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f0f2f8;
+      background-image:
+        linear-gradient(rgba(59,100,246,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,100,246,0.07) 1px, transparent 1px);
+      background-size: 32px 32px;
+      background-attachment: fixed;
+    }
+    .nav-active { background: rgba(59, 91, 219, 0.1); color: #3b5bdb; border-left: 3px solid #3b5bdb; }
+    .pb-mobile { padding-bottom: 5rem; }
+    @media (min-width: 768px) { .pb-mobile { padding-bottom: 0; } }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+    #sidebar { transition: transform 0.2s ease; }
+    #main-area { transition: margin-left 0.2s ease; }
+
+    /* Chat specific styles */
+    #chat-messages {
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    .msg-card {
+      transition: all 0.15s ease;
+    }
+    .msg-card:hover .msg-actions {
+      opacity: 1;
+    }
+    .msg-actions {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    @media (max-width: 767px) {
+      .msg-actions { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="min-h-screen" style="color: #555555;">
+
+  <!-- Sidebar overlay (mobile) -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/30 z-30 hidden" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar — White -->
+  <aside id="sidebar"
+    class="fixed left-0 w-60 bg-white border-r border-gray-200 z-40 -translate-x-full shadow-xl"
+    style="top: 3.5rem; height: calc(100% - 3.5rem);">
+
+    <nav class="flex flex-col h-full">
+      <div class="px-3 py-4 space-y-5 overflow-y-auto flex-1">
+
+        <div>
+          <p class="text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1.5 px-2">Menu</p>
+          <ul class="space-y-0.5">
+            {% if session_user.role == 'admin' %}
+            <li>
+              <a href="{% url 'admin_dashboard' %}"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium text-gray-600 hover:text-[#3b5bdb] hover:bg-blue-50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 2l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/></svg>
+                Dashboard
+              </a>
+            </li>
+            {% elif session_user.role == 'teacher' %}
+            <li>
+              <a href="{% url 'teacher_dashboard' %}"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium text-gray-600 hover:text-[#3b5bdb] hover:bg-blue-50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 2l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/></svg>
+                Dashboard
+              </a>
+            </li>
+            {% else %}
+            <li>
+              <a href="{% url 'student_dashboard' %}"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium text-gray-600 hover:text-[#3b5bdb] hover:bg-blue-50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 2l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/></svg>
+                Dashboard
+              </a>
+            </li>
+            {% endif %}
+            <li>
+              <a href="{% url 'chat_page' %}"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium nav-active">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                💬 Chat Public
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'chat_invitations' %}"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium text-gray-600 hover:text-[#3b5bdb] hover:bg-blue-50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                🔔 Invitations
+              </a>
+            </li>
+            <li>
+              <a href="#" onclick="openPrivateMessagesList(event)"
+                 class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all font-medium text-gray-600 hover:text-[#3b5bdb] hover:bg-blue-50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                💬 Messages Privés
+              </a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Déconnexion pinned to bottom -->
+      <div class="px-3 py-3 border-t border-gray-200">
+        <a href="#" onclick="smoothLogout(event)"
+           class="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] transition-all text-gray-500 hover:text-red-500 hover:bg-red-50 group">
+          <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          Déconnexion
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Top Navbar — EMSI Blue -->
+  <header class="fixed top-0 left-0 right-0 h-14 z-30 shadow-lg flex items-center justify-between px-4"
+          style="background: #3b5bdb;">
+    <div class="flex items-center gap-3">
+      <button onclick="toggleSidebar()" class="text-white/90 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors" title="Menu">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <h1 class="text-sm font-semibold text-white hidden sm:block">Chat Public</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-xs text-white/80 hidden sm:block">{{ session_user.first_name }} {{ session_user.last_name }}</span>
+      <div class="w-8 h-8 rounded-full bg-white/25 text-white font-semibold flex items-center justify-center text-xs border border-white/30">
+        {{ session_user.first_name|slice:":1" }}{{ session_user.last_name|slice:":1" }}
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="main-area" class="pt-14 min-h-screen pb-mobile transition-all duration-200">
+    <div class="p-5 md:p-8 max-w-4xl mx-auto">
+
+      <!-- Chat Header -->
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold mb-1" style="color: #555555;">💬 Chat Public</h2>
+        <p class="text-sm" style="color: #777777;">Espace de discussion en temps réel</p>
+      </div>
+
+      <!-- Banned User Alert -->
+      {% if is_banned %}
+      <div class="mb-4 bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+        <span class="text-2xl">🚫</span>
+        <div>
+          <p class="font-semibold text-red-700">Vous avez été désactivé du chat</p>
+          <p class="text-sm text-red-600">Vous pouvez lire les messages mais vous ne pouvez plus en envoyer.</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Chat Container -->
+      <div class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col" style="border-color: #e0e0e0; height: calc(100vh - 12rem);">
+
+        <!-- Messages Area -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
+          <div class="flex items-center justify-center py-12">
+            <p class="text-sm" style="color: #777777;">Chargement des messages...</p>
+          </div>
+        </div>
+
+        <!-- Input Bar -->
+        {% if not is_banned %}
+        <div class="border-t px-4 py-3 flex items-end gap-3" style="border-color: #e0e0e0; background: #fafafa;">
+          <textarea id="chat-input"
+                    rows="1"
+                    placeholder="Écrire un message..."
+                    class="flex-1 resize-none rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400"
+                    style="border-color: #d1d5db; max-height: 120px;"
+                    onkeydown="handleKeyDown(event)"></textarea>
+          <button onclick="sendMessage()"
+                  class="px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors flex-shrink-0 hover:opacity-90"
+                  style="background: #3b5bdb;">
+            Envoyer
+          </button>
+        </div>
+        {% endif %}
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="fixed bottom-18 md:bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+  <script>
+    const IS_ADMIN = {{ is_admin|yesno:"true,false" }};
+    const IS_BANNED = {{ is_banned|yesno:"true,false" }};
+    const CURRENT_USER_ID = {{ session_user.id }};
+    let lastMessageId = 0;
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      const main = document.getElementById('main-area');
+      const isOpen = !sidebar.classList.contains('-translate-x-full');
+
+      if (isOpen) {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+        if (window.innerWidth >= 768) {
+          main.style.marginLeft = '0';
+        }
+      } else {
+        sidebar.classList.remove('-translate-x-full');
+        if (window.innerWidth >= 768) {
+          main.style.marginLeft = '15rem';
+        } else {
+          overlay.classList.remove('hidden');
+        }
+      }
+    }
+
+    function showToast(message, type='success') {
+      const bg = { success: 'bg-emerald-600', error: 'bg-red-600', info: 'bg-[#3b5bdb]' };
+      const toast = document.createElement('div');
+      toast.className = `${bg[type] || bg.info} text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-lg pointer-events-auto`;
+      toast.textContent = message;
+      document.getElementById('toast-container').appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    async function smoothLogout(e) {
+      e.preventDefault();
+      try {
+        const response = await fetch("{% url 'api-logout' %}", {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          credentials: 'same-origin'
+        });
+        if (response.ok) {
+          window.location.href = "/";
+        } else {
+          showToast('Erreur de déconnexion', 'error');
+        }
+      } catch (error) {
+        showToast('Erreur de déconnexion', 'error');
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderMessage(msg) {
+      const isAdmin = msg.is_admin;
+      const isOwn = msg.is_own;
+
+      let bgClass = 'bg-white';
+      let borderStyle = 'border-color: #e0e0e0;';
+      let usernameColor = 'color: #555555;';
+
+      if (isAdmin) {
+        bgClass = '';
+        borderStyle = 'border-color: #f59e0b; background: rgba(245, 158, 11, 0.08);';
+        usernameColor = 'color: #d97706;';
+      } else if (isOwn) {
+        bgClass = '';
+        borderStyle = 'border-color: #93c5fd; background: rgba(59, 130, 246, 0.06);';
+        usernameColor = 'color: #3b82f6;';
+      }
+
+      const bannedBadge = msg.is_banned
+        ? ' <span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">🚫 Désactivé</span>'
+        : '';
+
+      // Friendship status icon (not on own messages, not on blocked)
+      let friendIcon = '';
+      if (!isOwn && msg.friendship_status !== 'self' && msg.friendship_status !== 'blocked') {
+        if (msg.friendship_status === 'friend') {
+          friendIcon = '<span title="Ami" style="color: #22c55e; font-size: 14px; vertical-align: middle;">✓</span>';
+        } else if (msg.friendship_status === 'pending') {
+          friendIcon = '<span title="Demande envoyée" style="color: #9ca3af; font-size: 14px; vertical-align: middle;">⏳</span>';
+        } else if (msg.friendship_status === 'none') {
+          friendIcon = `<button onclick="sendFriendRequest(${msg.user_id})" title="Ajouter ami" style="color: #3b82f6; font-size: 14px; vertical-align: middle; background: none; border: none; cursor: pointer; padding: 0 2px; line-height: 1;">➕</button>`;
+        }
+      }
+
+      // Admin controls
+      let adminControls = '';
+      if (IS_ADMIN && !isOwn) {
+        adminControls = `
+          <div class="msg-actions flex items-center gap-1 ml-2">
+            <button onclick="deleteMessage(${msg.id})" title="Supprimer" class="p-1 rounded hover:bg-red-100 text-red-500 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+            ${msg.is_banned
+              ? `<button onclick="unbanUser(${msg.user_id})" title="Réactiver" class="p-1 rounded hover:bg-green-100 text-green-600 transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 11-12.728 0M12 9v4m0 0v4m0-4h4m-4 0H8"/></svg>
+                </button>`
+              : `<button onclick="banUser(${msg.user_id})" title="Désactiver utilisateur" class="p-1 rounded hover:bg-amber-100 text-amber-600 transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636M12 9v4m0 0v4m0-4h4m-4 0H8"/></svg>
+                </button>`
+            }
+          </div>`;
+      }
+
+      // Own message delete button
+      let ownDelete = '';
+      if (isOwn && !IS_ADMIN) {
+        ownDelete = `
+          <div class="msg-actions flex items-center gap-1 ml-2">
+            <button onclick="deleteMessage(${msg.id})" title="Supprimer" class="p-1 rounded hover:bg-red-100 text-red-500 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>`;
+      }
+
+      return `
+        <div class="msg-card rounded-lg border p-3 ${bgClass}" style="${borderStyle}" data-id="${msg.id}">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-semibold text-[13px]" style="${usernameColor}">${escapeHtml(msg.username)}</span>
+              ${friendIcon}
+              ${bannedBadge}
+              <span class="text-[11px]" style="color: #9ca3af;">${msg.created_at}</span>
+            </div>
+            ${adminControls}${ownDelete}
+          </div>
+          <p class="text-sm mt-1" style="color: #555555; word-break: break-word;">${escapeHtml(msg.message)}</p>
+        </div>`;
+    }
+
+    function renderMessages(messages) {
+      const container = document.getElementById('chat-messages');
+      const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
+
+      let html = '';
+      for (const msg of messages) {
+        html += renderMessage(msg);
+        if (msg.id > lastMessageId) {
+          lastMessageId = msg.id;
+        }
+      }
+
+      if (messages.length === 0) {
+        html = '<div class="flex items-center justify-center py-12"><p class="text-sm" style="color: #777777;">Aucun message pour le moment. Soyez le premier à écrire !</p></div>';
+      }
+
+      container.innerHTML = html;
+
+      if (wasAtBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    async function fetchMessages() {
+      try {
+        const response = await fetch("{% url 'chat_messages' %}", {
+          credentials: 'same-origin'
+        });
+        const data = await response.json();
+        if (data.success) {
+          renderMessages(data.messages);
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+      }
+    }
+
+    async function sendMessage() {
+      if (IS_BANNED) {
+        showToast('Vous avez été désactivé du chat', 'error');
+        return;
+      }
+
+      const input = document.getElementById('chat-input');
+      const message = input.value.trim();
+      if (!message) return;
+
+      try {
+        const response = await fetch("{% url 'chat_send' %}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ message: message }),
+        });
+        const data = await response.json();
+        if (data.success) {
+          input.value = '';
+          input.style.height = 'auto';
+          fetchMessages();
+        } else {
+          showToast(data.message || 'Erreur', 'error');
+        }
+      } catch (error) {
+        showToast('Erreur réseau', 'error');
+      }
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    // Auto-resize textarea
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) {
+      chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      });
+    }
+
+    async function deleteMessage(messageId) {
+      if (!confirm('Supprimer ce message pour tous ?')) return;
+      try {
+        const response = await fetch(`/dashboard/chat/delete/${messageId}/`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          credentials: 'same-origin',
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast('Message supprimé', 'info');
+          fetchMessages();
+        } else {
+          showToast(data.message || 'Erreur', 'error');
+        }
+      } catch (error) {
+        showToast('Erreur réseau', 'error');
+      }
+    }
+
+    async function banUser(userId) {
+      if (!confirm('Désactiver cet utilisateur du chat ?')) return;
+      try {
+        const response = await fetch(`/dashboard/chat/ban/${userId}/`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          credentials: 'same-origin',
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast('Utilisateur désactivé du chat', 'info');
+          fetchMessages();
+        } else {
+          showToast(data.message || 'Erreur', 'error');
+        }
+      } catch (error) {
+        showToast('Erreur réseau', 'error');
+      }
+    }
+
+    async function unbanUser(userId) {
+      if (!confirm('Réactiver cet utilisateur dans le chat ?')) return;
+      try {
+        const response = await fetch(`/dashboard/chat/unban/${userId}/`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          credentials: 'same-origin',
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast('Utilisateur réactivé', 'success');
+          fetchMessages();
+        } else {
+          showToast(data.message || 'Erreur', 'error');
+        }
+      } catch (error) {
+        showToast('Erreur réseau', 'error');
+      }
+    }
+
+    async function sendFriendRequest(userId) {
+      try {
+        const response = await fetch(`/api/auth/dashboard/chat/friend-request/${userId}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          credentials: 'same-origin',
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          console.error('Friend request error:', response.status, text);
+          showToast('Erreur (' + response.status + ')', 'error');
+          return;
+        }
+        const data = await response.json();
+        if (data.success) {
+          showToast('Demande d\'ami envoyée', 'success');
+          fetchMessages();
+        } else {
+          showToast(data.message || 'Erreur', 'error');
+        }
+      } catch (error) {
+        console.error('Friend request error:', error);
+        showToast('Erreur réseau', 'error');
+      }
+    }
+
+    function openPrivateMessagesList(e) {
+      e.preventDefault();
+      window.location.href = '/dashboard/chat/invitations/';
+    }
+
+    // Initial load
+    fetchMessages();
+
+    // Poll every 3 seconds
+    setInterval(fetchMessages, 3000);
+  </script>
+
+</body>
+</html>

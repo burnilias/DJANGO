@@ -8,7 +8,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.hashers import make_password, check_password
-from .models import CustomUser, Classe, Groupe
+from .models import CustomUser, Classe, Groupe, ChatMessage, ChatBan, FriendRequest, Friendship, BlockedUser, PrivateMessage
 from .decorators import login_required_custom, role_required, _get_token_user, session_login_required, session_role_required
 
 
@@ -2886,3 +2886,250 @@ def cv_download_docx(request, id):
     filename = f"{cv.title.replace(' ', '_')}.docx"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+# ── Chat Public Views ─────────────────────────────────────────────────────
+
+@session_login_required
+def chat_page(request):
+    """Render the public chat page."""
+    user = request.session_user
+    is_banned = ChatBan.objects.filter(user=user).exists()
+    return render(request, 'dashboard/chat.html', {
+        'session_user': user,
+        'is_banned': is_banned,
+        'is_admin': user.role == 'admin',
+    })
+
+
+@session_login_required
+@require_http_methods(['POST'])
+def chat_send(request):
+    """Send a chat message. Banned users cannot send."""
+    user = request.session_user
+    is_banned = ChatBan.objects.filter(user=user).exists()
+    if is_banned:
+        return JsonResponse({'success': False, 'message': 'Vous avez été désactivé du chat'}, status=403)
+    data = _parse_json(request)
+    message = (data.get('message') or '').strip()
+    if not message:
+        return JsonResponse({'success': False, 'message': 'Message vide.'}, status=400)
+    ChatMessage.objects.create(user=user, message=message)
+    return JsonResponse({'success': True})
+
+
+@session_login_required
+@require_http_methods(['GET'])
+def chat_messages(request):
+    """Return last 100 non-deleted messages as JSON."""
+    user = request.session_user
+    msgs = ChatMessage.objects.filter(is_deleted=False).select_related('user').order_by('-created_at')[:100]
+    msgs = reversed(list(msgs))
+
+    # Precompute friendship info for the current user
+    friend_ids = set()
+    for f in Friendship.objects.filter(Q(user1=user) | Q(user2=user)):
+        friend_ids.add(f.user1_id if f.user2_id == user.id else f.user2_id)
+    pending_sent_ids = set(FriendRequest.objects.filter(from_user=user, status='pending').values_list('to_user_id', flat=True))
+    blocked_ids = set(BlockedUser.objects.filter(blocker=user).values_list('blocked_id', flat=True))
+
+    data = []
+    for m in msgs:
+        # Determine friendship status
+        if m.user.id == user.id:
+            friendship_status = 'self'
+        elif m.user.id in blocked_ids:
+            friendship_status = 'blocked'
+        elif m.user.id in friend_ids:
+            friendship_status = 'friend'
+        elif m.user.id in pending_sent_ids:
+            friendship_status = 'pending'
+        else:
+            friendship_status = 'none'
+
+        data.append({
+            'id': m.id,
+            'username': m.user.name,
+            'message': m.message,
+            'created_at': m.created_at.strftime('%d/%m/%Y %H:%M'),
+            'is_admin': m.user.role == 'admin',
+            'is_own': m.user.id == user.id,
+            'user_id': m.user.id,
+            'is_banned': ChatBan.objects.filter(user=m.user).exists(),
+            'friendship_status': friendship_status,
+        })
+    return JsonResponse({'success': True, 'messages': data})
+
+
+@session_login_required
+@require_http_methods(['POST'])
+def chat_delete(request, message_id):
+    """Soft-delete a message. Admin can delete any, user only own."""
+    user = request.session_user
+    msg = get_object_or_404(ChatMessage, id=message_id, is_deleted=False)
+    if user.role != 'admin' and msg.user.id != user.id:
+        return JsonResponse({'success': False, 'message': 'Non autorisé.'}, status=403)
+    msg.is_deleted = True
+    msg.save()
+    return JsonResponse({'success': True})
+
+
+@session_login_required
+@require_http_methods(['POST'])
+def chat_ban(request, user_id):
+    """Admin only: ban a user from chat."""
+    admin = request.session_user
+    if admin.role != 'admin':
+        return JsonResponse({'success': False, 'message': 'Admin uniquement.'}, status=403)
+    target = get_object_or_404(CustomUser, id=user_id)
+    if target.role == 'admin':
+        return JsonResponse({'success': False, 'message': 'Cannot ban admin.'}, status=403)
+    ChatBan.objects.get_or_create(user=target, defaults={'banned_by': admin})
+    return JsonResponse({'success': True})
+
+
+@session_login_required
+@require_http_methods(['POST'])
+def chat_unban(request, user_id):
+    """Admin only: unban a user from chat."""
+    admin = request.session_user
+    if admin.role != 'admin':
+        return JsonResponse({'success': False, 'message': 'Admin uniquement.'}, status=403)
+    target = get_object_or_404(CustomUser, id=user_id)
+    ChatBan.objects.filter(user=target).delete()
+    return JsonResponse({'success': True})
+
+
+# ── Friend System & Private Messaging Views ───────────────────────────────
+
+@session_login_required
+@require_http_methods(['POST'])
+def chat_friend_request(request, user_id):
+    """Send a friend request to another user."""
+    user = request.session_user
+    target = get_object_or_404(CustomUser, id=user_id)
+    if target.id == user.id:
+        return JsonResponse({'success': False, 'message': 'Cannot friend yourself.'}, status=400)
+    # Check if blocked
+    if BlockedUser.objects.filter(blocker=target, blocked=user).exists() or BlockedUser.objects.filter(blocker=user, blocked=target).exists():
+        return JsonResponse({'success': False, 'message': 'Utilisateur bloqué.'}, status=400)
+    # Check if already friends
+    if Friendship.objects.filter(Q(user1_id=min(user.id, target.id), user2_id=max(user.id, target.id))).exists():
+        return JsonResponse({'success': False, 'message': 'Déjà amis.'}, status=400)
+    # Check if pending request already exists (either direction)
+    if FriendRequest.objects.filter(from_user=user, to_user=target, status='pending').exists():
+        return JsonResponse({'success': False, 'message': 'Demande déjà envoyée.'}, status=400)
+    if FriendRequest.objects.filter(from_user=target, to_user=user, status='pending').exists():
+        return JsonResponse({'success': False, 'message': 'Cet utilisateur vous a déjà envoyé une demande.'}, status=400)
+    FriendRequest.objects.create(from_user=user, to_user=target)
+    return JsonResponse({'success': True})
+
+
+@session_login_required
+@require_http_methods(['POST'])
+def chat_friend_accept(request, request_id):
+    """Accept a friend request."""
+    user = request.session_user
+    fr = get_object_or_404(FriendRequest, id=request_id, to_user=user, status='pending')
+    fr.status = 'accepted'
+    fr.save()
+    # Create Friendship with user1_id < user2_id
+    u1, u2 = (fr.from_user_id, fr.to_user_id) if fr.from_user_id < fr.to_user_id else (fr.to_user_id, fr.from_user_id)
+    Friendship.objects.get_or_create(user1_id=u1, user2_id=u2)
+    return JsonResponse({'success': True})
+
+
+@session_login_required
+@require_http_methods(['POST'])
+def chat_friend_decline(request, request_id):
+    """Decline a friend request."""
+    user = request.session_user
+    fr = get_object_or_404(FriendRequest, id=request_id, to_user=user, status='pending')
+    fr.status = 'declined'
+    fr.save()
+    return JsonResponse({'success': True})
+
+
+@session_login_required
+def chat_invitations(request):
+    """Show pending friend requests received by the logged-in user."""
+    user = request.session_user
+    pending_requests = FriendRequest.objects.filter(to_user=user, status='pending').select_related('from_user')
+    return render(request, 'dashboard/invitations.html', {
+        'session_user': user,
+        'pending_requests': pending_requests,
+    })
+
+
+@session_login_required
+@require_http_methods(['POST'])
+def chat_block_user(request, user_id):
+    """Block a user — also removes any existing friendship."""
+    user = request.session_user
+    target = get_object_or_404(CustomUser, id=user_id)
+    if target.id == user.id:
+        return JsonResponse({'success': False, 'message': 'Cannot block yourself.'}, status=400)
+    BlockedUser.objects.get_or_create(blocker=user, blocked=target)
+    # Remove friendship if exists
+    u1, u2 = (user.id, target.id) if user.id < target.id else (target.id, user.id)
+    Friendship.objects.filter(user1_id=u1, user2_id=u2).delete()
+    return JsonResponse({'success': True})
+
+
+@session_login_required
+def chat_private(request, user_id):
+    """Private message conversation with a specific user."""
+    user = request.session_user
+    other = get_object_or_404(CustomUser, id=user_id)
+    if other.id == user.id:
+        return redirect('chat_page')
+    # Check if blocked
+    if BlockedUser.objects.filter(Q(blocker=user, blocked=other) | Q(blocker=other, blocked=user)).exists():
+        return redirect('chat_page')
+
+    if request.method == 'POST':
+        data = _parse_json(request)
+        message = (data.get('message') or '').strip()
+        if not message:
+            return JsonResponse({'success': False, 'message': 'Message vide.'}, status=400)
+        PrivateMessage.objects.create(sender=user, receiver=other, message=message)
+        return JsonResponse({'success': True})
+
+    # GET: mark all received messages from other as read
+    PrivateMessage.objects.filter(sender=other, receiver=user, is_read=False).update(is_read=True)
+
+    # Get conversation
+    conversation = PrivateMessage.objects.filter(
+        Q(sender=user, receiver=other) | Q(sender=other, receiver=user)
+    ).select_related('sender', 'receiver').order_by('created_at')
+
+    return render(request, 'dashboard/private_chat.html', {
+        'session_user': user,
+        'other_user': other,
+        'conversation': conversation,
+    })
+
+
+@session_login_required
+@require_http_methods(['GET'])
+def chat_friends_json(request):
+    """Return current user's friends list as JSON."""
+    user = request.session_user
+    friendships = Friendship.objects.filter(Q(user1=user) | Q(user2=user)).select_related('user1', 'user2')
+    friends = []
+    for f in friendships:
+        friend = f.user2 if f.user1_id == user.id else f.user1
+        # Get last private message
+        last_msg = PrivateMessage.objects.filter(
+            Q(sender=user, receiver=friend) | Q(sender=friend, receiver=user)
+        ).order_by('-created_at').first()
+        unread_count = PrivateMessage.objects.filter(sender=friend, receiver=user, is_read=False).count()
+        friends.append({
+            'id': friend.id,
+            'name': friend.name,
+            'role': friend.role,
+            'unread_count': unread_count,
+            'last_message': last_msg.message[:50] if last_msg else None,
+            'last_message_time': last_msg.created_at.strftime('%d/%m/%Y %H:%M') if last_msg else None,
+        })
+    return JsonResponse({'success': True, 'friends': friends})

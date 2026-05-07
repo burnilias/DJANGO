@@ -327,3 +327,88 @@ class CV(models.Model):
     @property
     def section_count(self):
         return len(self.cv_data.get('sections', []))
+
+
+# ============================================
+# Chat Models
+# ============================================
+
+class ChatMessage(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='chat_messages')
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'chat_messages'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.user.name}: {self.message[:50]}"
+
+
+class ChatBan(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='chat_ban', unique=True)
+    banned_at = models.DateTimeField(auto_now_add=True)
+    banned_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='bans_given')
+
+    class Meta:
+        db_table = 'chat_bans'
+
+    def __str__(self):
+        return f"{self.user.name} banned by {self.banned_by.name}"
+
+
+class FriendRequest(models.Model):
+    from_user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_requests')
+    to_user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='received_requests')
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('declined', 'Declined')], default='pending')
+
+    class Meta:
+        db_table = 'friend_requests'
+        unique_together = ('from_user', 'to_user')
+
+    def __str__(self):
+        return f"{self.from_user.name} → {self.to_user.name} ({self.status})"
+
+
+class Friendship(models.Model):
+    user1 = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='friendships1')
+    user2 = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='friendships2')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'friendships'
+        unique_together = ('user1', 'user2')
+
+    def __str__(self):
+        return f"{self.user1.name} ↔ {self.user2.name}"
+
+
+class BlockedUser(models.Model):
+    blocker = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='blocking')
+    blocked = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='blocked_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'blocked_users'
+        unique_together = ('blocker', 'blocked')
+
+    def __str__(self):
+        return f"{self.blocker.name} blocked {self.blocked.name}"
+
+
+class PrivateMessage(models.Model):
+    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_private')
+    receiver = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='received_private')
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'private_messages'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.sender.name} → {self.receiver.name}: {self.message[:50]}"

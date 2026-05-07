@@ -97,4 +97,25 @@ urlpatterns = [
     path('dashboard/cv/<int:id>/download/docx/', views.cv_download_docx, name='cv_download_docx'),
     path('dashboard/cv/<int:id>/delete/', views.cv_delete, name='cv_delete'),
     path('dashboard/cv/<int:id>/clone/', views.cv_clone, name='cv_clone'),
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # CHAT PUBLIC URLS
+    # ═══════════════════════════════════════════════════════════════════════
+    path('dashboard/chat/', views.chat_page, name='chat_page'),
+    path('dashboard/chat/send/', views.chat_send, name='chat_send'),
+    path('dashboard/chat/messages/', views.chat_messages, name='chat_messages'),
+    path('dashboard/chat/delete/<int:message_id>/', views.chat_delete, name='chat_delete'),
+    path('dashboard/chat/ban/<int:user_id>/', views.chat_ban, name='chat_ban'),
+    path('dashboard/chat/unban/<int:user_id>/', views.chat_unban, name='chat_unban'),
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # FRIEND SYSTEM & PRIVATE MESSAGING URLS
+    # ═══════════════════════════════════════════════════════════════════════
+    path('dashboard/chat/friend-request/<int:user_id>/', views.chat_friend_request, name='chat_friend_request'),
+    path('dashboard/chat/friend-request/<int:request_id>/accept/', views.chat_friend_accept, name='chat_friend_accept'),
+    path('dashboard/chat/friend-request/<int:request_id>/decline/', views.chat_friend_decline, name='chat_friend_decline'),
+    path('dashboard/chat/invitations/', views.chat_invitations, name='chat_invitations'),
+    path('dashboard/chat/block/<int:user_id>/', views.chat_block_user, name='chat_block_user'),
+    path('dashboard/chat/private/<int:user_id>/', views.chat_private, name='chat_private'),
+    path('dashboard/chat/friends/', views.chat_friends_json, name='chat_friends_json'),
 ]
