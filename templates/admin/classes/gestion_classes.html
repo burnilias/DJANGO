@@ -277,60 +277,6 @@
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════════════════ -->
-  <!-- SECTION 4 : Emploi du Temps par Groupe              -->
-  <!-- ════════════════════════════════════════════════════ -->
-  <div class="manage-card">
-    <div class="manage-card-header">
-      <div class="manage-card-icon text-white">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-      </div>
-      <div>
-        <h2 class="manage-card-title">Emploi du Temps par Groupe</h2>
-        <p class="manage-card-sub">Visualiser et gérer les créneaux</p>
-      </div>
-    </div>
-
-    <div class="mt-4">
-      <!-- Groupe selector -->
-      <div class="manage-form-row !mb-6">
-        <div class="manage-form-group max-w-xs">
-          <label class="manage-form-label">Sélectionner un groupe</label>
-          <select id="emploi-groupe-select" onchange="loadEmploiDuTemps()" class="manage-select">
-            <option value="">-- Choisir un groupe --</option>
-            {% for g in groupes %}
-            <option value="{{ g.id }}">{{ g.classe.nom }} — {{ g.nom }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-
-      <!-- Schedule grid -->
-      <div id="emploi-grid" class="hidden overflow-x-auto">
-        <table class="w-full text-sm border-collapse min-w-[800px]">
-          <thead class="bg-gray-50/50 text-[#8a95b8]">
-            <tr>
-              <th class="px-3 py-3 text-center font-medium text-[10px] uppercase tracking-wider font-mono border border-gray-100/50">Heure</th>
-              <th class="px-3 py-3 text-center font-medium text-[10px] uppercase tracking-wider font-mono border border-gray-100/50">Lundi</th>
-              <th class="px-3 py-3 text-center font-medium text-[10px] uppercase tracking-wider font-mono border border-gray-100/50">Mardi</th>
-              <th class="px-3 py-3 text-center font-medium text-[10px] uppercase tracking-wider font-mono border border-gray-100/50">Mercredi</th>
-              <th class="px-3 py-3 text-center font-medium text-[10px] uppercase tracking-wider font-mono border border-gray-100/50">Jeudi</th>
-              <th class="px-3 py-3 text-center font-medium text-[10px] uppercase tracking-wider font-mono border border-gray-100/50">Vendredi</th>
-              <th class="px-3 py-3 text-center font-medium text-[10px] uppercase tracking-wider font-mono border border-gray-100/50">Samedi</th>
-            </tr>
-          </thead>
-          <tbody id="emploi-tbody">
-            <!-- Filled by JS -->
-          </tbody>
-        </table>
-      </div>
-
-      <div id="emploi-empty" class="text-center py-12 text-[#8a95b8] text-sm italic">
-        Sélectionnez un groupe pour voir son emploi du temps.
-      </div>
-    </div>
-  </div>
-
 </div>
 {% endblock %}
 
@@ -390,53 +336,5 @@ function affecterGroupe(userId) {
   .catch(() => showToast('Erreur réseau.', 'error'));
 }
 
-// ── Emploi du Temps ──
-const timeSlots = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
-const dayMap = { '1':'Lundi','2':'Mardi','3':'Mercredi','4':'Jeudi','5':'Vendredi','6':'Samedi' };
-
-function loadEmploiDuTemps() {
-  const groupeId = document.getElementById('emploi-groupe-select').value;
-  if (!groupeId) {
-    document.getElementById('emploi-grid').classList.add('hidden');
-    document.getElementById('emploi-empty').classList.remove('hidden');
-    return;
-  }
-  // Fetch schedules for this group
-  fetch(`{% url "admin_schedule_list" %}?groupe_id=${groupeId}`, {
-    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  })
-  .then(r => r.json())
-  .then(data => {
-    document.getElementById('emploi-grid').classList.remove('hidden');
-    document.getElementById('emploi-empty').classList.add('hidden');
-    renderEmploiGrid(data.schedules || []);
-  })
-  .catch(() => showToast('Erreur réseau.', 'error'));
-}
-
-function renderEmploiGrid(schedules) {
-  const tbody = document.getElementById('emploi-tbody');
-  tbody.innerHTML = '';
-  timeSlots.forEach(time => {
-    let row = `<tr><td class="border border-gray-100/50 px-3 py-3 text-[#8a95b8] font-mono text-[10px] text-center bg-gray-50/30">${time}</td>`;
-    for (let d = 1; d <= 6; d++) {
-      const slot = schedules.find(s => s.day_of_week == String(d) && s.start_time.startsWith(time.substring(0,5)));
-      if (slot) {
-        const colors = { 
-          cours: 'bg-blue-50/50 text-blue-700 border-blue-200/50', 
-          controle: 'bg-amber-50/50 text-amber-700 border-amber-200/50', 
-          examen: 'bg-emerald-50/50 text-emerald-700 border-emerald-200/50', 
-          rattrapage: 'bg-rose-50/50 text-rose-700 border-rose-200/50' 
-        };
-        const cls = colors[slot.schedule_type] || colors.cours;
-        row += `<td class="border border-gray-100/50 px-2 py-1"><div class="rounded-lg px-2 py-2 border ${cls} text-[11px] shadow-sm"><div class="font-bold mb-0.5">${slot.name}</div><div class="flex items-center gap-1 opacity-80"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg> ${slot.room || '—'}</div><div class="opacity-60 font-mono mt-0.5">${slot.start_time}–${slot.end_time}</div></div></td>`;
-      } else {
-        row += `<td class="border border-gray-100/50 px-2 py-1 hover:bg-gray-50/30 transition-colors"></td>`;
-      }
-    }
-    row += '</tr>';
-    tbody.innerHTML += row;
-  });
-}
 </script>
 {% endblock %}

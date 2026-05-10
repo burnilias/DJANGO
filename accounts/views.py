@@ -635,8 +635,32 @@ def admin_schedule_list(request):
     from datetime import datetime, timedelta
     user = request.session_user
     
-    all_schedules = Schedule.objects.select_related('teacher').all()
+    # AJAX request for group schedule
+    groupe_id = request.GET.get('groupe_id')
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    if groupe_id and is_ajax:
+        schedules = Schedule.objects.select_related('teacher', 'groupe').filter(groupe_id=groupe_id)
+        data = []
+        for s in schedules:
+            data.append({
+                'id': s.id,
+                'name': s.name,
+                'room': s.room,
+                'day_of_week': s.day_of_week,
+                'start_time': s.start_time.strftime('%H:%M'),
+                'end_time': s.end_time.strftime('%H:%M'),
+                'schedule_type': s.schedule_type,
+            })
+        return JsonResponse({'success': True, 'schedules': data})
+
+    # Full page render — only show schedules when a group is selected
+    selected_groupe_id = groupe_id
+    if groupe_id:
+        all_schedules = Schedule.objects.select_related('teacher').filter(groupe_id=groupe_id)
+    else:
+        all_schedules = Schedule.objects.none()
     teachers = CustomUser.objects.filter(role='teacher', status='active')
+    groupes = Groupe.objects.select_related('classe').all().order_by('classe__nom', 'nom')
     
     # Get current week dates
     today = datetime.now()
@@ -722,6 +746,8 @@ def admin_schedule_list(request):
         'days': days,
         'time_slots': time_slots,
         'teachers': teachers,
+        'groupes': groupes,
+        'selected_groupe_id': selected_groupe_id,
         'week_start': week_start,
         'week_end': week_end,
         'session_user': user,
@@ -745,6 +771,7 @@ def admin_schedule_add(request):
         end_time = request.POST.get('end_time', '')
         schedule_type = request.POST.get('schedule_type', 'cours')
         teacher_id = request.POST.get('teacher', '')
+        groupe_id = request.POST.get('groupe', '')
         
         errors = {}
         if not name:
@@ -753,13 +780,17 @@ def admin_schedule_add(request):
             errors['start_time'] = "L'heure de début est requise."
         if not end_time:
             errors['end_time'] = "L'heure de fin est requise."
+        if not groupe_id:
+            errors['groupe'] = 'Le groupe est requis.'
         
         if errors:
             teachers = CustomUser.objects.filter(role='teacher', status='active')
+            groupes = Groupe.objects.select_related('classe').all().order_by('classe__nom', 'nom')
             return render(request, 'admin/emploi/add.html', {
                 'errors': errors,
                 'form_data': request.POST,
                 'teachers': teachers,
+                'groupes': groupes,
                 'session_user': user,
                 'page_title': 'Ajouter un cours',
             })
@@ -773,14 +804,17 @@ def admin_schedule_add(request):
             end_time=end_time,
             schedule_type=schedule_type,
             teacher_id=teacher_id if teacher_id else None,
+            groupe_id=groupe_id if groupe_id else None,
         )
         schedule.save()
         messages.success(request, 'Cours ajouté avec succès.')
         return redirect('admin_schedule_list')
     
     teachers = CustomUser.objects.filter(role='teacher', status='active')
+    groupes = Groupe.objects.select_related('classe').all().order_by('classe__nom', 'nom')
     return render(request, 'admin/emploi/add.html', {
         'teachers': teachers,
+        'groupes': groupes,
         'session_user': user,
         'page_title': 'Ajouter un cours',
     })
@@ -803,14 +837,18 @@ def admin_schedule_edit(request, id):
         schedule.schedule_type = request.POST.get('schedule_type', 'cours')
         teacher_id = request.POST.get('teacher', '')
         schedule.teacher_id = teacher_id if teacher_id else None
+        groupe_id = request.POST.get('groupe', '')
+        schedule.groupe_id = groupe_id if groupe_id else None
         schedule.save()
         messages.success(request, 'Cours mis à jour.')
         return redirect('admin_schedule_list')
     
     teachers = CustomUser.objects.filter(role='teacher', status='active')
+    groupes = Groupe.objects.select_related('classe').all().order_by('classe__nom', 'nom')
     return render(request, 'admin/emploi/edit.html', {
         'schedule': schedule,
         'teachers': teachers,
+        'groupes': groupes,
         'session_user': user,
         'page_title': 'Modifier le cours',
     })
@@ -847,7 +885,12 @@ def student_schedule(request):
     from datetime import datetime, timedelta
     user = request.session_user
     
-    all_schedules = Schedule.objects.select_related('teacher').all()
+    # Filter schedules by student's group — null-group entries never shown to students
+    user_group = user.groupe
+    if user_group:
+        all_schedules = Schedule.objects.select_related('teacher').filter(groupe=user_group)
+    else:
+        all_schedules = Schedule.objects.none()
     
     # Get current week dates
     today = datetime.now()
@@ -858,7 +901,7 @@ def student_schedule(request):
     # Day mapping
     day_names_fr = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
     day_short_fr = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
-    today_weekday = today.weekday()
+    today_weekday = today.weekday()  # 0=Monday
     
     # Build day headers
     day_names = []
@@ -903,7 +946,7 @@ def student_schedule(request):
                     'cours': 'type-lab',
                     'controle': 'type-lang',
                     'examen': 'type-research',
-                    'rattrapage': 'type-research',
+                    'rattrapage': 'type-rattrapage',
                 }
                 type_class = type_class_map.get(schedule.schedule_type, '')
                 
@@ -1166,7 +1209,6 @@ def admin_all_certificates(request):
 
 
 @session_login_required
-@session_role_required('admin')
 def admin_student_of_month(request):
     """Admin can view and manually trigger Student of the Month calculation"""
     current_month = timezone.now().replace(day=1)
@@ -1335,6 +1377,7 @@ def teacher_lesson_create(request, course_id):
                 'session_user': user,
                 'page_title': 'Ajouter une Leçon',
                 'form_data': request.POST,
+                'groupes': groupes,
             })
         
         lesson = Lesson(
@@ -1345,6 +1388,8 @@ def teacher_lesson_create(request, course_id):
             order=int(order) if order else 0,
             duration_minutes=int(duration_minutes) if duration_minutes else 0,
         )
+        if groupe_id:
+            lesson.groupe_id = groupe_id
         lesson.save()
 
         # Save multiple video links
@@ -1769,7 +1814,7 @@ def course_certificate_pdf(request, course_id):
     c.setFont('Times-Bold', 14)
     c.setFillColor(BLACK)
     course_w = c.stringWidth(course_name, 'Times-Bold', 14)
-    course_y = page_h * 0.32
+    course_y = page_h * 0.35
     c.drawString((page_w - course_w) / 2, course_y, course_name)
 
     # Today's date — formatted dd/mm/yyyy, at the Date line bottom-left
@@ -1994,6 +2039,19 @@ def calculate_student_of_the_month():
         return student_id, courses_completed
     
     return None, 0
+
+
+@session_login_required
+def student_of_month(request):
+    """Student of the Month page"""
+    current_month = timezone.now().replace(day=1)
+    student_of_month = StudentOfMonth.objects.filter(month=current_month).select_related('student').first()
+    
+    context = {
+        'student_of_month': student_of_month,
+        'session_user': request.session_user,
+    }
+    return render(request, 'student/student_of_month.html', context)
 
 
 @session_login_required

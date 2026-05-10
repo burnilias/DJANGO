@@ -31,3 +31,8 @@ if settings.DEBUG:
         path('', frontend_view, {'file_path': ''}),
     ]
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Catch-all for frontend routes (React Router handles these)
+urlpatterns += [
+    re_path(r'^(?!api/|admin/|media/).*$', frontend_view, {'file_path': ''}),
+]

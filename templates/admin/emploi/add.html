@@ -89,6 +89,18 @@
         </div>
         
         <div>
+          <label class="block text-sm font-medium mb-1">Groupe *</label>
+          <select name="groupe" required
+                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+            <option value="">— Choisir un groupe —</option>
+            {% for g in groupes %}
+            <option value="{{ g.id }}" {% if form_data.groupe == g.id|stringformat:"s" %}selected{% endif %}>{{ g.classe.nom }} — {{ g.nom }}</option>
+            {% endfor %}
+          </select>
+          {% if errors.groupe %}<p class="text-red-500 text-xs mt-1">{{ errors.groupe }}</p>{% endif %}
+        </div>
+        
+        <div>
           <label class="block text-sm font-medium mb-1">Description</label>
           <textarea name="description" rows="3"
                     class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">{{ form_data.description|default:'' }}</textarea>
